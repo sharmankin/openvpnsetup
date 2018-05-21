@@ -98,6 +98,12 @@ EOF
     sed -ri 's/^ +//g' "$EASY_RSA/$KEY_NAME".conf
     sudo mv "$EASY_RSA/$KEY_NAME".conf /etc/openvpn/
 }
+make_aliases () {
+    EDITOR="$(sudo update-alternatives --get-selections | grep editor | awk '{print $3}')"
+    echo -e "alias editvpn='sudo $EDITOR /etc/openvpn/$KEY_NAME.conf'\\n\
+alias vpnlog='sudo lnav /var/log/openvpn/openvpn_current_session.log'\\n\
+alias vpnonline='sudo cat /var/log/openvpn/openvpn-status.log'" >> "$HOME"/.bash_aliases
+}
 first_run () {
     f_clr
     echo -en "Вы начинаете установку OpenVPN сервер. Сначала необходимо настроить переменные для генерации ключей.\\n\
@@ -124,6 +130,7 @@ first_run () {
                 echo 'Please source the vars script first (i.e. "source ./vars")'
                 echo 'Make sure you have edited it to reflect your configuration.'
             fi
+            sudo apt-get -y install lnav > /dev/null&
     # == </Emulate ./clean-all> ====
             while [ "${accepted:-0}" -ne 1 ]; do
                 echo -en "Двухбуквенный код страны\\n\
@@ -199,6 +206,7 @@ first_run () {
                         accepted=1
                         sudo cat /etc/openvpn/"$KEY_NAME".conf
                         set_vars
+                        make_aliases
                     else
                         echo -e "\\e[1;31mЧто-то пошло не так. Попробуйте повторить установку.\\e[0m"
                     fi
