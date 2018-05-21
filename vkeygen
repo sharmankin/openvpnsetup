@@ -1,0 +1,83 @@
+#!/bin/bash
+
+cd ~/vpnca || exit 11
+[ -z "$1" ] && exit 12
+
+EASY_RSA="$(pwd)"
+export EASY_RSA
+export OPENSSL="openssl"
+export PKCS11TOOL="pkcs11-tool"
+export GREP="grep"
+export KEY_CONFIG="$EASY_RSA/openssl-1.0.0.cnf"
+export KEY_DIR="$EASY_RSA/keys"
+export PKCS11_MODULE_PATH="dummy"
+export PKCS11_PIN="dummy"
+export KEY_SIZE=2048
+export CA_EXPIRE=3650
+export KEY_EXPIRE=3650
+export KEY_COUNTRY="RU"
+export KEY_PROVINCE="MO"
+export KEY_CITY="Moscow City"
+export KEY_ORG="NoName"
+export KEY_EMAIL="karpovan@gmail.com"
+export KEY_OU="NoName"
+export KEY_NAME="karpovan.org"
+
+./pkitool "$1" && \
+    CLIENTS_KEYS="$EASY_RSA/clients_files/${1}/keys"
+
+mkdir -p "$CLIENTS_KEYS"
+
+[ -d "$CLIENTS_KEYS" ] || exit 15
+[ -e "$KEY_DIR/${1}.key"  ] || exit 16
+mv "$KEY_DIR/${1}."* "$CLIENTS_KEYS"
+cp "$KEY_DIR"/{ca.crt,ta.key} "$CLIENTS_KEYS"
+
+OVPN_FILE="$EASY_RSA/clients_files/${1}/${1}.ovpn"
+
+REMOTE="$KEY_NAME"
+PORT="$(grep -E "^port " /etc/openvpn/"$KEY_NAME".conf | awk '{print $2}')"
+CIPHER="$(grep -E "^cipher " /etc/openvpn/"$KEY_NAME".conf | awk '{print $2}')"
+AUTH="$(grep -E "^auth " /etc/openvpn/"$KEY_NAME".conf | awk '{print $2}')"
+TUN_MTU="$(grep -E "^tun-mtu " /etc/openvpn/"$KEY_NAME".conf | awk '{print $2}')"
+MSSFIX="$(grep -E "^mssfix " /etc/openvpn/"$KEY_NAME".conf | awk '{print $2}')"
+
+echo -e "client\\n\
+pull\\n\
+dev tun\\n\
+proto udp\\n\
+tun-mtu $TUN_MTU\\n\
+mssfix $MSSFIX\\n\
+remote $REMOTE $PORT\\n\
+resolv-retry infinite\\n\
+compress lz4\\n\
+user nobody\\n\
+group nogroup\\n\
+persist-key\\n\
+persist-tun\\n\
+tls-client\\n\
+tls-timeout 3600\\n\
+hand-window 3600\\n\
+remote-cert-tls server\\n\
+cipher $CIPHER\\n\
+auth $AUTH\\n\
+auth-nocache\\n\
+key-direction 1\\n\
+verb 4\\n\
+mute 20\\n\
+\\n\
+# script-security 2\\n\
+# up /etc/openvpn/update-resolv-conf\\n\
+# down /etc/openvpn/update-resolv-conf\\n" > "$OVPN_FILE"
+
+cat <(echo -e '<ca>')\
+    "$KEY_DIR"/ca.crt\
+    <(echo -e '</ca>\n<cert>')\
+    "$CLIENTS_KEYS/${1}".crt\
+    <(echo -e '</cert>\n<key>')\
+    "$CLIENTS_KEYS/${1}".key\
+    <(echo -e '</key>\n<tls-auth>')\
+    "$KEY_DIR"/ta.key\
+    <(echo -e '</tls-auth>')\
+    >> "$OVPN_FILE"
+
