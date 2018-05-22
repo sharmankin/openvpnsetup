@@ -76,7 +76,7 @@ make_conf_file () {
             cert /etc/openvpn/keys/$KEY_NAME.crt\\n\
             key /etc/openvpn/keys/$KEY_NAME.key\\n\
             dh /etc/openvpn/keys/dh$KEY_SIZE.pem\\n\
-            server 192.168.$(rand_network).0 255.255.255.0\\n\
+            server 192.$(rand_network).$(rand_network).0 255.255.255.0\\n\
             ifconfig-pool-persist ipp.txt\\n\
             client-config-dir ccd\\n\
             push \"redirect-gateway def1 bypass-dhcp\"\\n\
@@ -100,9 +100,8 @@ make_conf_file () {
             log-append   /var/log/openvpn/openvpn.log\\n\
             verb 3\\n\
             mute-replay-warnings\\n\
-            # crl-verify /etc/openvpn/crl.pem" | sudo tee /etc/openvpn/"$KEY_NAME".conf > /dev/null
+            # crl-verify /etc/openvpn/crl.pem" | sed -ri 's/^[[:cntrl:]]? +//g' | sudo tee /etc/openvpn/"$KEY_NAME".conf > /dev/null
 
-    sudo sed -ri 's/^[[:cntrl:]]? +//g' /etc/openvpn/"$KEY_NAME".conf
     # sudo chown root:root /etc/openvpn/"$KEY_NAME".conf
     # sudo chmod 644 /etc/openvpn/"$KEY_NAME".conf
 }
@@ -216,6 +215,47 @@ first_run () {
                         \\r\\e[1;32m=======================================================================\\e[0m\\n\\r"
                         accepted=1
                         sudo cat /etc/openvpn/"$KEY_NAME".conf
+                        sudo sed -i '/net.ipv4.ip_forward/s/^#//' /etc/sysctl.conf
+                        echo 1 | sudo tee /proc/sys/net/ipv4/ip_forward > /dev/null
+                        sudo sysctl -p > /dev/null
+                        main_interface="$(ip addr | grep -E "inet.*global.* e\\w+$" | awk '{print $7}')"
+                        tun_network="$(sudo grep -E "^server" /etc/openvpn/"$KEY_NAME".conf | awk '{print $2}')"
+
+                        if sudo uwf status 2>/dev/null | grep -qw active; then
+                        sudo sed '/^$/,$d' /etc/ufw/before.rules | tee add_rules_file > /dev/null
+                            echo -e "\\n\
+                                # START OPENVPN RULES\\n\
+                                # NAT table rules\\n\
+                                *nat\\n\
+                                :POSTROUTING ACCEPT [0:0] \\n\
+                                # Allow traffic from OpenVPN client to $main_interface\\n\
+                                -A POSTROUTING -s $tun_network/24 -o $main_interface -j MASQUERADE\\n\
+                                COMMIT\\n\
+                                # END OPENVPN RULES\\n\
+                            " | sed -r 's/^ +//g' >> add_rules_file
+                            sudo sed '1,/^$/d' /etc/ufw/before.rules | tee -a add_rules_file > /dev/null
+                            sudo mv /etc/ufw/before.rules{,.bkp}
+                            more add_rules_file | sudo tee /etc/ufw/before.rules > /dev/null
+                            rm add_rules_file
+                            sudo ufw allow "$(sudo grep -E "^port" /etc/openvpn/"$KEY_NAME".conf | awk '{print $2}')"/udp > /dev/null
+                            sudo systemctl restart ufw
+                        else
+                     #       sudo /sbin/iptables -A POSTROUTING -s "$tun_network/24" -o "$main_interface" -j MASQUERADE
+                            echo -e "[Unit]\\n\
+                            Description=Up nat route for openvpn\\n\
+                            After=network.target\\n\\n\
+                            [Service]\\n\
+                            Type=forking\\n\
+                            User=root\\n\
+                            ExecStart=/sbin/iptables  -t nat -A POSTROUTING -s $tun_network/24 -o $main_interface -j MASQUERADE\\n\\n\
+                            [Install]\\n\
+                            WantedBy=multi-user.target" | sed -r 's/^ +//g' | sudo tee /etc/systemd/system/ovpnroute.service
+                            sudo systemctl daemon-reload >/dev/null
+                            sudo systemctl enable ovpnroute >/dev/null
+                            sudo systemctl start ovpnroute >/dev/null
+                        fi
+
+
                         set_vars
                         make_aliases
                     else
