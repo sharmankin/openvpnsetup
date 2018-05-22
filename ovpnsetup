@@ -41,7 +41,7 @@
     }
     set_vars (){
         [ "$EASY_RSA" ] || exit 10
-        sed -ri "/Export Section Begin/,/Export Section End/{\
+        sed -ri "/^ +# == Export Section Begin/,/^ +# == Export Section End/{\
             /^ +EASY_RSA/s/\".*\"/\"${EASY_RSA//\//\\\/}\"/;\
             /^ +KEY_CONFIG/s/\".*\"/\"${KEY_CONFIG//\//\\\/}\"/;\
             /^ +export KEY_DIR/s/\".*\"/\"${KEY_DIR//\//\\\/}\"/;\
@@ -51,9 +51,9 @@
             /^ +export KEY_ORG/s/\".*\"/\"$KEY_ORG\"/;\
             /^ +KEY_EMAIL/s/\".*\"/\"$KEY_EMAIL\"/;\
             /^ +export KEY_OU/s/\".*\"/\"$KEY_OU\"/;\
-            /^ +export KEY_NAME/s/\".*\"/\"$KEY_NAME\"/;\
-            /^ +export FIRST_RUN_KEY/s/1/0/\
+            /^ +export KEY_NAME/s/\".*\"/\"$KEY_NAME\"/\
         }" "$0"
+        sed -ri '/^ +export FIRST_RUN_KEY/s/1/0/' "$0"
     }
     rand_network () {
         while [ "${match:-0}" -ne 1 ];do
@@ -109,8 +109,7 @@
         echo "$EDITOR" | grep -q "nano" && EDITOR="$EDITOR -m"
         echo -e "alias editvpn='sudo $EDITOR /etc/openvpn/$KEY_NAME.conf'\\n\
         alias vpnlog='sudo lnav /var/log/openvpn/openvpn_current_session.log'\\n\
-        alias vpnonline='sudo cat /var/log/openvpn/openvpn-status.log'" >> "$HOME"/.bash_aliases
-        sed -ri 's/^[[:cntrl:]]? +//g' "$HOME"/.bash_aliases
+        alias vpnonline='sudo cat /var/log/openvpn/openvpn-status.log'" | sed -r 's/^[[:cntrl:]]? +//g' >> "$HOME"/.bash_aliases
     }
     first_run () {
         f_clr
