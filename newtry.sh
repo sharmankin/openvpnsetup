@@ -242,14 +242,14 @@ first_run () {
                         else
                      #       sudo /sbin/iptables -A POSTROUTING -s "$tun_network/24" -o "$main_interface" -j MASQUERADE
                             echo -e "[Unit]\\n\
-                            Description=Up nat route for openvpn\\n\
+                            Description=Up nat route for OpenVPN\\n\
                             After=network.target\\n\\n\
                             [Service]\\n\
                             Type=forking\\n\
                             User=root\\n\
-                            ExecStart=/sbin/iptables  -t nat -A POSTROUTING -s $tun_network/24 -o $main_interface -j MASQUERADE\\n\\n\
+                            ExecStart=/sbin/iptables -t nat -A POSTROUTING -s $tun_network/24 -o $main_interface -j MASQUERADE\\n\\n\
                             [Install]\\n\
-                            WantedBy=multi-user.target" | sed -r 's/^ +//g' | sudo tee /etc/systemd/system/ovpnroute.service >/dev/null
+                            WantedBy=multi-user.target\\n" | sed -r 's/^ +//g' | sudo tee /etc/systemd/system/ovpnroute.service >/dev/null
                             sudo systemctl daemon-reload >/dev/null
                             sudo systemctl enable ovpnroute >/dev/null
                             sudo systemctl start ovpnroute >/dev/null
