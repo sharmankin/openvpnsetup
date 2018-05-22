@@ -235,9 +235,9 @@ add_user () {
     fi
     "$EASY_RSA"/pkitool "$vpnuser"
     CLIENT_DIR="$EASY_RSA/clients_files/$vpnuser/"
-    OVPN_FILE="$CLIENT_DIR/$vpnuser($KEY_NAME).ovpn"
+    OVPN_FILE="$CLIENT_DIR/${vpnuser}_${KEY_NAME}).ovpn"
     mkdir -p "$CLIENT_DIR"
-    zip -qj "$KEY_DIR"/{"$vpnuser".key,"$vpnuser".crt,ta.key,ca.crt} "$CLIENT_DIR/$vpnuser($KEY_NAME).zip"
+    zip -qj "$CLIENT_DIR/${vpnuser}_${KEY_NAME}.zip" "$KEY_DIR"/{"$vpnuser".key,"$vpnuser".crt,ta.key,ca.crt}
     echo "$vpnuser:$CLIENT_DIR:active" >> "$EASY_RSA/registred_users"
 
         REMOTE="$(curl -s -4 https://wtfismyip.com/text)"
@@ -291,7 +291,7 @@ export_vars
 
 case "$1" in
         add)
-            [ -z "$2" ] || exit 223
+            [ -z "$2" ] && exit 223
             vpnuser="$(echo "$2" | tr -d "[:blank:]" | tr -d "[:punct:]" | tr -s "[:upper:]" "[:lower:]")"
             add_user
         ;;
