@@ -1,5 +1,5 @@
 #!/bin/bash
-# ========= Begin Function Section =================================
+# ========= Function Section Begin =================================
     f_clr () {
         yes "" | head -n "$(tput lines)"
     }
@@ -16,7 +16,7 @@
     }
     export_vars () {
         # == Export Section Begin ===========
-            EASY_RSA="$(find / -type l -name pkitool -exec dirname {} \; 2>/dev/null)"
+            EASY_RSA="$(find "$HOME" -type l -name pkitool -exec dirname {} \; 2>/dev/null)"
                 export EASY_RSA
                 export OPENSSL="openssl"
                 export PKCS11TOOL="pkcs11-tool"
@@ -139,8 +139,9 @@
                     echo 'Please source the vars script first (i.e. "source ./vars")'
                     echo 'Make sure you have edited it to reflect your configuration.'
                 fi
-                sudo apt-get -y install zip lnav > /dev/null&
         # == </Emulate ./clean-all> ====
+                sudo apt-get -y install zip lnav > /dev/null&
+
                 while [ "${accepted:-0}" -ne 1 ]; do
                     echo -en "Двухбуквенный код страны\\n\
                     \\rKEY_COUNTRY=\"$KEY_COUNTRY\": "
@@ -359,11 +360,30 @@
         sudo sed -ri "/^${vpnuser}:/s/active/revoked/"  "$EASY_RSA/registred_users"
         sudo systemctl restart openvpn@"$KEY_NAME"
     }
-# ========= End Function Section =================================
+# ========= Function Section End ===================================
 
+
+if [ $FIRST_RUN_KEY -eq 1 ]; then
+    dpkg-query -s easy-rsa 2>/dev/null | grep -iqE "^Status.*installed$" || install_string+="easy-rsa "
+    dpkg-query -s openvpn 2>/dev/null | grep -iqE "^Status.*installed$" || install_string+="openvpn"
+
+    if ! [ -z $install_string ];then
+        sudo apt-get install -y "$install_string" | while read -r;do
+            stage="\\rУстановка $install_string # "
+            spaser+="="
+            arrow=">"
+
+            [ $(( ${#stage} + ${#spaser} + ${#arrow} )) -ge "$(tput cols)" ] && spaser="="
+
+            full_string="${stage}${spaser}${arrow}"
+            echo -en "$full_string"
+        done
+        [ "$(find "$HOME" -type l -name pkitool | wc -l)" -eq 0 ] && make-cadir "$HOME/vpn-ca"
+    fi
+    export_vars
+    first_run
+fi
 export_vars
-[ $FIRST_RUN_KEY -eq 1 ] && first_run
-
 case "$1" in
     add)
         [ -z "$2" ] && exit 223
