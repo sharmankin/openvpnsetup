@@ -1,5 +1,5 @@
 #!/bin/bash
-# ========= Begin Function Section =================================
+# ========= Function Section Begin =================================
     f_clr () {
         yes "" | head -n "$(tput lines)"
     }
@@ -16,7 +16,7 @@
     }
     export_vars () {
         # == Export Section Begin ===========
-            EASY_RSA="$(find / -type l -name pkitool -exec dirname {} \; 2>/dev/null)"
+            EASY_RSA="$(find "$HOME" -type l -name pkitool -exec dirname {} \; 2>/dev/null)"
                 export EASY_RSA
                 export OPENSSL="openssl"
                 export PKCS11TOOL="pkcs11-tool"
@@ -37,12 +37,11 @@
                 export KEY_EMAIL
                 export KEY_OU="DEF_UNIT"
                 export KEY_NAME="ovpnserver"
-                export FIRST_RUN_KEY=1
         # == Export Section End =============
     }
     set_vars (){
         [ "$EASY_RSA" ] || exit 10
-        sed -ri "/Export Section Begin/,/Export Section End/{\
+        sed -ri "/^ +# == Export Section Begin/,/^ +# == Export Section End/{\
             /^ +EASY_RSA/s/\".*\"/\"${EASY_RSA//\//\\\/}\"/;\
             /^ +KEY_CONFIG/s/\".*\"/\"${KEY_CONFIG//\//\\\/}\"/;\
             /^ +export KEY_DIR/s/\".*\"/\"${KEY_DIR//\//\\\/}\"/;\
@@ -52,9 +51,9 @@
             /^ +export KEY_ORG/s/\".*\"/\"$KEY_ORG\"/;\
             /^ +KEY_EMAIL/s/\".*\"/\"$KEY_EMAIL\"/;\
             /^ +export KEY_OU/s/\".*\"/\"$KEY_OU\"/;\
-            /^ +export KEY_NAME/s/\".*\"/\"$KEY_NAME\"/;\
-            /^ +export FIRST_RUN_KEY/s/1/0/\
+            /^ +export KEY_NAME/s/\".*\"/\"$KEY_NAME\"/\
         }" "$0"
+        sed -ri '/^ +export FIRST_RUN_KEY/s/1/0/' "$0"
     }
     rand_network () {
         while [ "${match:-0}" -ne 1 ];do
@@ -110,8 +109,7 @@
         echo "$EDITOR" | grep -q "nano" && EDITOR="$EDITOR -m"
         echo -e "alias editvpn='sudo $EDITOR /etc/openvpn/$KEY_NAME.conf'\\n\
         alias vpnlog='sudo lnav /var/log/openvpn/openvpn_current_session.log'\\n\
-        alias vpnonline='sudo cat /var/log/openvpn/openvpn-status.log'" >> "$HOME"/.bash_aliases
-        sed -ri 's/^[[:cntrl:]]? +//g' "$HOME"/.bash_aliases
+        alias vpnonline='sudo cat /var/log/openvpn/openvpn-status.log'" | sed -r 's/^[[:cntrl:]]? +//g' >> "$HOME"/.bash_aliases
     }
     first_run () {
         f_clr
@@ -139,8 +137,9 @@
                     echo 'Please source the vars script first (i.e. "source ./vars")'
                     echo 'Make sure you have edited it to reflect your configuration.'
                 fi
-                sudo apt-get -y install zip lnav > /dev/null&
         # == </Emulate ./clean-all> ====
+                sudo apt-get -y install zip lnav > /dev/null&
+
                 while [ "${accepted:-0}" -ne 1 ]; do
                     echo -en "Двухбуквенный код страны\\n\
                     \\rKEY_COUNTRY=\"$KEY_COUNTRY\": "
@@ -359,18 +358,38 @@
         sudo sed -ri "/^${vpnuser}:/s/active/revoked/"  "$EASY_RSA/registred_users"
         sudo systemctl restart openvpn@"$KEY_NAME"
     }
-# ========= End Function Section =================================
+# ========= Function Section End ===================================
 
+    export FIRST_RUN_KEY=1
+
+if [ $FIRST_RUN_KEY -eq 1 ]; then
+    dpkg-query -s easy-rsa 2>/dev/null | grep -iqE "^Status.*installed$" || install_ersa="easy-rsa"
+    dpkg-query -s openvpn 2>/dev/null | grep -iqE "^Status.*installed$" || install_ovpn="openvpn"
+
+    if ! [ -z "$install_ersa$install_ovpn" ];then
+        sudo apt-get install -y $install_ovpn $install_ersa | while read -r;do
+            stage="\\rУстановка $install_ersa $install_ovpn # "
+            spaser+="="
+            arrow=">"
+
+            [ $(( ${#stage} + ${#spaser} + ${#arrow} )) -ge "$(tput cols)" ] && spaser="="
+
+            full_string="${stage}${spaser}${arrow}"
+            echo -en "$full_string"
+        done && echo
+        [ "$(find "$HOME" -type l -name pkitool | wc -l)" -eq 0 ] && make-cadir "$HOME/vpn-ca"
+    fi
+    export_vars
+    first_run
+fi
 export_vars
-[ $FIRST_RUN_KEY -eq 1 ] && first_run
-
 case "$1" in
     add)
         [ -z "$2" ] && exit 223
         vpnuser="$(echo "$2" | tr -d "[:blank:]" | tr -d "[:punct:]" | tr -s "[:upper:]" "[:lower:]")"
         add_user
         ;;
-    revok)
+    del)
         [ -z "$2" ] && exit 224
         vpnuser="$2"
         revok_user
