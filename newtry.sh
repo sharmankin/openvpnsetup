@@ -205,8 +205,7 @@ first_run () {
                     sudo mkdir -p /etc/openvpn/keys
                     sudo mkdir -p /var/log/openvpn
                     sudo mkdir -p /etc/openvpn/ccd
-                    sudo cp "${KEY_DIR}"/{ca.key,ca.crt,ta.key,dh"$KEY_SIZE".pem,"$KEY_NAME".crt} /etc/openvpn/keys || exit 332
-# ,"$KEY_NAME".key
+                    sudo cp "${KEY_DIR}"/{ca.key,ca.crt,ta.key,dh"$KEY_SIZE".pem,"$KEY_NAME".crt,"$KEY_NAME".key} /etc/openvpn/keys || exit 332
                     make_conf_file
 
                     if sudo systemctl start openvpn@"$KEY_NAME" 2>/dev/null; then
@@ -221,10 +220,10 @@ first_run () {
                         make_aliases
                     else
                         f_clr
-                        echo -e "\\e[1;31m===========================================================================================\\e[0m\\n\
+                        echo -e "\\e[1;31m===================================================================================================\\e[0m\\n\
                         \\rOpenVPN сервер \\e[1;31m$KEY_NAME\\e[0m Установлен с ошибками\\n\
                         \\rПопробуйте найти ошибку запустив команду \"\\e[1;35msudo lnav /var/log/openvpn/openvpn_current_session.log\\e[0m\"\\n\
-                        \\r\\e[1;31m===========================================================================================\\e[0m\\n\\r"
+                        \\r\\e[1;31m===================================================================================================\\e[0m\\n\\r"
                         exit 1000
                     fi
                 else
