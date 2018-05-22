@@ -370,7 +370,7 @@ case "$1" in
         vpnuser="$(echo "$2" | tr -d "[:blank:]" | tr -d "[:punct:]" | tr -s "[:upper:]" "[:lower:]")"
         add_user
         ;;
-    revok)
+    del)
         [ -z "$2" ] && exit 224
         vpnuser="$2"
         revok_user
