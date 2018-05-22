@@ -211,7 +211,9 @@ first_run () {
 
                     if sudo systemctl start openvpn@"$KEY_NAME" 2>/dev/null; then
                         f_clr
-                        echo -e "OpenVPN сервер \\e[1;32m$KEY_NAME\\e[0m Установлен и запущен без ошибок"
+                        echo -e "\\e[1;32m=======================================================================\\e[0m\\n\
+                        \\rOpenVPN сервер \\e[1;32m$KEY_NAME\\e[0m Установлен и запущен без ошибок\\n\
+                        \\r\\e[1;32m=======================================================================\\e[0m\\n\\r"
                         accepted=1
                         sudo cat /etc/openvpn/"$KEY_NAME".conf
                         set_vars
