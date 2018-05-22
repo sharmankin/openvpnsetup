@@ -240,7 +240,6 @@
                                 sudo ufw allow "$(sudo grep -E "^port" /etc/openvpn/"$KEY_NAME".conf | awk '{print $2}')"/udp > /dev/null
                                 sudo systemctl restart ufw
                             else
-                         #       sudo /sbin/iptables -A POSTROUTING -s "$tun_network/24" -o "$main_interface" -j MASQUERADE
                                 echo -e "[Unit]\\n\
                                 Description=Up nat route for OpenVPN\\n\
                                 After=network.target\\n\\n\
