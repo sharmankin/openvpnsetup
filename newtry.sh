@@ -100,7 +100,7 @@ make_conf_file () {
             log-append   /var/log/openvpn/openvpn.log\\n\
             verb 3\\n\
             mute-replay-warnings\\n\
-            # crl-verify /etc/openvpn/crl.pem" | sed -ri 's/^[[:cntrl:]]? +//g' | sudo tee /etc/openvpn/"$KEY_NAME".conf > /dev/null
+            # crl-verify /etc/openvpn/crl.pem" | sed -r 's/^[[:cntrl:]]? +//g' | sudo tee /etc/openvpn/"$KEY_NAME".conf > /dev/null
 
     # sudo chown root:root /etc/openvpn/"$KEY_NAME".conf
     # sudo chmod 644 /etc/openvpn/"$KEY_NAME".conf
@@ -254,8 +254,6 @@ first_run () {
                             sudo systemctl enable ovpnroute >/dev/null
                             sudo systemctl start ovpnroute >/dev/null
                         fi
-
-
                         set_vars
                         make_aliases
                     else
