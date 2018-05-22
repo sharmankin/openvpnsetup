@@ -368,7 +368,7 @@ if [ $FIRST_RUN_KEY -eq 1 ]; then
     dpkg-query -s openvpn 2>/dev/null | grep -iqE "^Status.*installed$" || install_string+="openvpn"
 
     if ! [ -z $install_string ];then
-        sudo apt-get install -y "$install_string" | while read -r;do
+        sudo apt-get install -y $install_string | while read -r;do
             stage="\\rУстановка $install_string # "
             spaser+="="
             arrow=">"
