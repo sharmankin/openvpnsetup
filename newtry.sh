@@ -351,7 +351,7 @@
         "$EASY_RSA/revoke-full" "$vpnuser"
         sudo cp -f "$KEY_DIR"/crl.pem /etc/openvpn
         sudo chown root:root /etc/openvpn/crl.pem
-        sudo sed -ri '/crl-verify/s/^# ?//' /etc/openvpn/"KEY_NAME".conf
+        sudo sed -ri '/crl-verify/s/^# ?//' /etc/openvpn/"$KEY_NAME".conf
         sudo sed -ri "/^${vpnuser}:/s/active/revoked/"  "$EASY_RSA/registred_users"
         sudo systemctl restart openvpn@"$KEY_NAME"
     }
