@@ -205,11 +205,12 @@ first_run () {
                     sudo mkdir -p /etc/openvpn/keys
                     sudo mkdir -p /var/log/openvpn
                     sudo mkdir -p /etc/openvpn/ccd
-                    sudo cp "${KEY_DIR}"/{ca.key,ca.crt,ta.key,dh"$KEY_SIZE".pem,"$KEY_NAME".key,"$KEY_NAME".crt} /etc/openvpn/keys || exit 332
-
+                    sudo cp "${KEY_DIR}"/{ca.key,ca.crt,ta.key,dh"$KEY_SIZE".pem,"$KEY_NAME".crt} /etc/openvpn/keys || exit 332
+# ,"$KEY_NAME".key
                     make_conf_file
 
                     if sudo systemctl start openvpn@"$KEY_NAME" 2>/dev/null; then
+                        sudo systemctl enable openvpn@"$KEY_NAME" >/dev/null
                         f_clr
                         echo -e "\\e[1;32m=======================================================================\\e[0m\\n\
                         \\rOpenVPN сервер \\e[1;32m$KEY_NAME\\e[0m Установлен и запущен без ошибок\\n\
@@ -219,7 +220,10 @@ first_run () {
                         set_vars
                         make_aliases
                     else
-                        echo -e "\\e[1;31mЧто-то пошло не так. Попробуйте повторить установку.\\e[0m"
+                        echo -e "\\e[1;31m=======================================================================\\e[0m\\n\
+                        \\rOpenVPN сервер \\e[1;31m$KEY_NAME\\e[0m Установлен с ошибками\\n\
+                        \\rПопробуйте найти ошибку запустив команду \"\\e[1;35mlnav /var/log/openvpn/openvpn_current_session.log\\e[0m\"\\n\
+                        \\r\\e[1;31m=======================================================================\\e[0m\\n\\r"
                     fi
                 else
                     f_clr
