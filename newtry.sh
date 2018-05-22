@@ -130,7 +130,7 @@ first_run () {
                 echo 'Please source the vars script first (i.e. "source ./vars")'
                 echo 'Make sure you have edited it to reflect your configuration.'
             fi
-            sudo apt-get -y install lnav > /dev/null&
+            sudo apt-get -y install zip lnav > /dev/null&
     # == </Emulate ./clean-all> ====
             while [ "${accepted:-0}" -ne 1 ]; do
                 echo -en "Двухбуквенный код страны\\n\
