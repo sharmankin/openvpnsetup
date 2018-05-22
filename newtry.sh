@@ -222,7 +222,7 @@ first_run () {
                         tun_network="$(sudo grep -E "^server" /etc/openvpn/"$KEY_NAME".conf | awk '{print $2}')"
 
                         if sudo uwf status 2>/dev/null | grep -qw active; then
-                        sudo sed '/^$/,$d' /etc/ufw/before.rules | tee add_rules_file > /dev/null
+                            sudo sed '/^$/,$d' /etc/ufw/before.rules | tee add_rules_file > /dev/null
                             echo -e "\\n\
                                 # START OPENVPN RULES\\n\
                                 # NAT table rules\\n\
@@ -235,7 +235,7 @@ first_run () {
                             " | sed -r 's/^ +//g' >> add_rules_file
                             sudo sed '1,/^$/d' /etc/ufw/before.rules | tee -a add_rules_file > /dev/null
                             sudo mv /etc/ufw/before.rules{,.bkp}
-                            more add_rules_file | sudo tee /etc/ufw/before.rules > /dev/null
+                            sudo tee /etc/ufw/before.rules < add_rules_file > /dev/null
                             rm add_rules_file
                             sudo ufw allow "$(sudo grep -E "^port" /etc/openvpn/"$KEY_NAME".conf | awk '{print $2}')"/udp > /dev/null
                             sudo systemctl restart ufw
@@ -249,7 +249,7 @@ first_run () {
                             User=root\\n\
                             ExecStart=/sbin/iptables  -t nat -A POSTROUTING -s $tun_network/24 -o $main_interface -j MASQUERADE\\n\\n\
                             [Install]\\n\
-                            WantedBy=multi-user.target" | sed -r 's/^ +//g' | sudo tee /etc/systemd/system/ovpnroute.service
+                            WantedBy=multi-user.target" | sed -r 's/^ +//g' | sudo tee /etc/systemd/system/ovpnroute.service >/dev/null
                             sudo systemctl daemon-reload >/dev/null
                             sudo systemctl enable ovpnroute >/dev/null
                             sudo systemctl start ovpnroute >/dev/null
