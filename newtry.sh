@@ -55,54 +55,63 @@ set_vars (){
         /^ +export FIRST_RUN_KEY/s/1/0/\
     }" "$0"
 }
+rand_network () {
+    while [ "${match:-0}" -ne 1 ];do
+    segment=$(( RANDOM % 253 ))
+    if [ $segment -gt 10 ] ;then
+        [ "$(( segment / 8 * 8 ))" -eq $segment ] && match=1 && echo $segment
+    fi
+done
+}
 make_conf_file () {
-    cat > "$EASY_RSA/$KEY_NAME".conf <<  EOF
-        mode server
-        proto udp
-        dev tun
-        port $(while [ "${s:-0}" -ne 1 ];do e=$RANDOM;echo $e | grep -qE "^[1-9]{4}$" && s=1 && echo $e;done)
-        tun-mtu 1500
-        mssfix 0
-        tls-server
-        float
-        ca /etc/openvpn/keys/ca.crt
-        cert /etc/openvpn/keys/$KEY_NAME.crt
-        key /etc/openvpn/keys/$KEY_NAME.key
-        dh /etc/openvpn/keys/dh$KEY_SIZE.pem
-        server 172.10.1.0 255.255.255.0
-        ifconfig-pool-persist ipp.txt
-        client-config-dir ccd
-        push "redirect-gateway def1 bypass-dhcp"
-        push "dhcp-option DNS 208.67.222.222"
-        push "dhcp-option DNS 208.67.220.220"
-        # client-to-client
-        keepalive 10 120
-        key-direction 0
-        tls-auth /etc/openvpn/keys/ta.key
-        cipher AES-256-CBC
-        auth SHA256
-        ncp-ciphers AES-256-CBC
-        tls-timeout 3600
-        hand-window 3600
-        user nobody
-        group nogroup
-        persist-key
-        persist-tun
-        status      /var/log/openvpn/openvpn-status.log
-        log         /var/log/openvpn/openvpn_current_session.log
-        log-append   /var/log/openvpn/openvpn.log
-        verb 3
-        mute-replay-warnings
-        # crl-verify /etc/openvpn/crl.pem
-EOF
-    sed -ri 's/^ +//g' "$EASY_RSA/$KEY_NAME".conf
-    sudo mv "$EASY_RSA/$KEY_NAME".conf /etc/openvpn/
+    echo -e "mode server\\n\
+            proto udp\\n\
+            dev tun\\n\
+            port $(while [ "${s:-0}" -ne 1 ];do e=$RANDOM;echo $e | grep -qE "^[1-9]{4}$" && s=1 && echo $e;done)\\n\
+            tun-mtu 1500\\n\
+            mssfix 0\\n\
+            tls-server\\n\
+            float\\n\
+            ca /etc/openvpn/keys/ca.crt\\n\
+            cert /etc/openvpn/keys/$KEY_NAME.crt\\n\
+            key /etc/openvpn/keys/$KEY_NAME.key\\n\
+            dh /etc/openvpn/keys/dh$KEY_SIZE.pem\\n\
+            server 192.168.$(rand_network).0 255.255.255.0\\n\
+            ifconfig-pool-persist ipp.txt\\n\
+            client-config-dir ccd\\n\
+            push \"redirect-gateway def1 bypass-dhcp\"\\n\
+            push \"dhcp-option DNS 208.67.222.222\"\\n\
+            push \"dhcp-option DNS 208.67.220.220\"\\n\
+            # client-to-client\\n\
+            keepalive 10 120\\n\
+            key-direction 0\\n\
+            tls-auth /etc/openvpn/keys/ta.key\\n\
+            cipher AES-256-CBC\\n\
+            auth SHA256\\n\
+            ncp-ciphers AES-256-CBC\\n\
+            tls-timeout 3600\\n\
+            hand-window 3600\\n\
+            user nobody\\n\
+            group nogroup\\n\
+            persist-key\\n\
+            persist-tun\\n\
+            status      /var/log/openvpn/openvpn-status.log\\n\
+            log         /var/log/openvpn/openvpn_current_session.log\\n\
+            log-append   /var/log/openvpn/openvpn.log\\n\
+            verb 3\\n\
+            mute-replay-warnings\\n\
+            # crl-verify /etc/openvpn/crl.pem" | sudo tee /etc/openvpn/"$KEY_NAME".conf
+
+    sed -ri 's/^[[:cntrl:]]? +//g' /etc/openvpn/"$KEY_NAME".conf
+    # sudo chown root:root /etc/openvpn/"$KEY_NAME".conf
+    # sudo chmod 644 /etc/openvpn/"$KEY_NAME".conf
 }
 make_aliases () {
     EDITOR="$(sudo update-alternatives --get-selections | grep editor | awk '{print $3}')"
     echo -e "alias editvpn='sudo $EDITOR /etc/openvpn/$KEY_NAME.conf'\\n\
-alias vpnlog='sudo lnav /var/log/openvpn/openvpn_current_session.log'\\n\
-alias vpnonline='sudo cat /var/log/openvpn/openvpn-status.log'" >> "$HOME"/.bash_aliases
+    alias vpnlog='sudo lnav /var/log/openvpn/openvpn_current_session.log'\\n\
+    alias vpnonline='sudo cat /var/log/openvpn/openvpn-status.log'" >> "$HOME"/.bash_aliases
+    sed -ri 's/^[[:cntrl:]]? +//g' "$HOME"/.bash_aliases
 }
 first_run () {
     f_clr
@@ -235,7 +244,7 @@ add_user () {
     fi
     "$EASY_RSA"/pkitool "$vpnuser"
     CLIENT_DIR="$EASY_RSA/clients_files/$vpnuser/"
-    OVPN_FILE="$CLIENT_DIR/${vpnuser}_${KEY_NAME}).ovpn"
+    OVPN_FILE="$CLIENT_DIR/${vpnuser}_${KEY_NAME}.ovpn"
     mkdir -p "$CLIENT_DIR"
     zip -qj "$CLIENT_DIR/${vpnuser}_${KEY_NAME}.zip" "$KEY_DIR"/{"$vpnuser".key,"$vpnuser".crt,ta.key,ca.crt}
     echo "$vpnuser:$CLIENT_DIR:active" >> "$EASY_RSA/registred_users"
@@ -244,35 +253,35 @@ add_user () {
         PORT="$(grep -E "^port " /etc/openvpn/"$KEY_NAME".conf | awk '{print $2}')"
         CIPHER="$(grep -E "^cipher " /etc/openvpn/"$KEY_NAME".conf | awk '{print $2}')"
         AUTH="$(grep -E "^auth " /etc/openvpn/"$KEY_NAME".conf | awk '{print $2}')"
-#        TUN_MTU="$(grep -E "^tun-mtu " /etc/openvpn/"$KEY_NAME".conf | awk '{print $2}')"
         MSSFIX="$(grep -E "^mssfix " /etc/openvpn/"$KEY_NAME".conf | awk '{print $2}')"
         NCP_CIPHER="$(grep -E "^ncp-ciphers " /etc/openvpn/"$KEY_NAME".conf | awk '{print $2}')"
-#        COMPRESS="$(grep -E "^compress " /etc/openvpn/"$KEY_NAME".conf | awk '{print $2}')"
+    #        TUN_MTU="$(grep -E "^tun-mtu " /etc/openvpn/"$KEY_NAME".conf | awk '{print $2}')"
+    #        COMPRESS="$(grep -E "^compress " /etc/openvpn/"$KEY_NAME".conf | awk '{print $2}')"
 
-cat >> "$OVPN_FILE" << EOF
-    client
-    dev tun
-    auth-nocache
-    explicit-exit-notify 1
-    mtu-test
-    mssfix $MSSFIX
-    remote $REMOTE $PORT udp
-    resolv-retry infinite
-    user nobody
-    group nogroup
-    persist-key
-    persist-tun
-    tls-client
-    tls-timeout 3600
-    hand-window 3600
-    remote-cert-tls server
-    cipher $CIPHER
-    auth $AUTH
-    ncp-ciphers ${NCP_CIPHER}
-    verb 0
-    mute 20
-EOF
-        sed -ri 's/^ +//g' "$OVPN_FILE"
+    echo -e "
+        client\\n\
+        dev tun\\n\
+        auth-nocache\\n\
+        explicit-exit-notify 1\\n\
+        mtu-test\\n\
+        mssfix $MSSFIX\\n\
+        remote $REMOTE $PORT udp\\n\
+        resolv-retry infinite\\n\
+        user nobody\\n\
+        group nogroup\\n\
+        persist-key\\n\
+        persist-tun\\n\
+        tls-client\\n\
+        tls-timeout 3600\\n\
+        hand-window 3600\\n\
+        remote-cert-tls server\\n\
+        cipher $CIPHER\\n\
+        auth $AUTH\\n\
+        ncp-ciphers ${NCP_CIPHER}\\n\
+        verb 0\\n\
+        mute 20
+        " > "$OVPN_FILE"
+        sed -ri 's/^[[:cntrl:]]? +//g' "$OVPN_FILE"
 
         cat <(echo -e '<ca>')\
             "$KEY_DIR"/ca.crt\
