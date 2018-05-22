@@ -102,7 +102,7 @@ make_conf_file () {
             mute-replay-warnings\\n\
             # crl-verify /etc/openvpn/crl.pem" | sudo tee /etc/openvpn/"$KEY_NAME".conf
 
-    sed -ri 's/^[[:cntrl:]]? +//g' /etc/openvpn/"$KEY_NAME".conf
+    sudo sed -ri 's/^[[:cntrl:]]? +//g' /etc/openvpn/"$KEY_NAME".conf
     # sudo chown root:root /etc/openvpn/"$KEY_NAME".conf
     # sudo chmod 644 /etc/openvpn/"$KEY_NAME".conf
 }
