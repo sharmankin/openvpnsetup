@@ -109,7 +109,7 @@ first_run () {
     echo -en "Вы начинаете установку OpenVPN сервер. Сначала необходимо настроить переменные для генерации ключей.\\n\
         \\rБудут выведены построчно переменные, значения которых необходимо изменить, или оставить по умолчанию нажав клавишу ввод.\\n\
         \\n\
-        \\rПриступить к настройке значений? [y|N]: "
+        \\rПриступить к настройке значений? [\\e[1;31my\\e[0m|\\e[1;32mN\\e[0m]]: "
     read -r -n 1 change_vars && echo
     case "$change_vars" in
         Y|y)
@@ -225,5 +225,79 @@ first_run () {
     esac
     exit 0
 }
+add_user () {
+    [ -d "$EASY_RSA/clients_files" ] || mkdir -p "$EASY_RSA/clients_files"
+    [ -f "$EASY_RSA/registred_users" ] || touch "$EASY_RSA/registred_users"
+    if grep -qE "^$vpnuser:" "$EASY_RSA/registred_users" ;then   # Доработать с учетом ID пользователя
+        echo -e "Пользователь с именем $vpnuser уже зарегистрирован на сервере.\\n\
+        \\rВыберите другое имя для регистрируемого пользователя"
+        exit 990
+    fi
+    "$EASY_RSA"/pkitool "$vpnuser"
+    CLIENT_DIR="$EASY_RSA/clients_files/$vpnuser/"
+    OVPN_FILE="$CLIENT_DIR/$vpnuser($KEY_NAME).ovpn"
+    mkdir -p "$CLIENT_DIR"
+    zip -qj "$KEY_DIR"/{"$vpnuser".key,"$vpnuser".crt,ta.key,ca.crt} "$CLIENT_DIR/$vpnuser($KEY_NAME).zip"
+    echo "$vpnuser:$CLIENT_DIR:active" >> "$EASY_RSA/registred_users"
+
+        REMOTE="$(curl -s -4 https://wtfismyip.com/text)"
+        PORT="$(grep -E "^port " /etc/openvpn/"$KEY_NAME".conf | awk '{print $2}')"
+        CIPHER="$(grep -E "^cipher " /etc/openvpn/"$KEY_NAME".conf | awk '{print $2}')"
+        AUTH="$(grep -E "^auth " /etc/openvpn/"$KEY_NAME".conf | awk '{print $2}')"
+#        TUN_MTU="$(grep -E "^tun-mtu " /etc/openvpn/"$KEY_NAME".conf | awk '{print $2}')"
+        MSSFIX="$(grep -E "^mssfix " /etc/openvpn/"$KEY_NAME".conf | awk '{print $2}')"
+        NCP_CIPHER="$(grep -E "^ncp-ciphers " /etc/openvpn/"$KEY_NAME".conf | awk '{print $2}')"
+#        COMPRESS="$(grep -E "^compress " /etc/openvpn/"$KEY_NAME".conf | awk '{print $2}')"
+
+cat >> "$OVPN_FILE" << EOF
+    client
+    dev tun
+    auth-nocache
+    explicit-exit-notify 1
+    mtu-test
+    mssfix $MSSFIX
+    remote $REMOTE $PORT udp
+    resolv-retry infinite
+    user nobody
+    group nogroup
+    persist-key
+    persist-tun
+    tls-client
+    tls-timeout 3600
+    hand-window 3600
+    remote-cert-tls server
+    cipher $CIPHER
+    auth $AUTH
+    ncp-ciphers ${NCP_CIPHER}
+    verb 0
+    mute 20
+EOF
+        sed -ri 's/^ +//g' "$OVPN_FILE"
+
+        cat <(echo -e '<ca>')\
+            "$KEY_DIR"/ca.crt\
+            <(echo -e '</ca>\n<cert>')\
+            "$KEY_DIR/$vpnuser".crt\
+            <(echo -e '</cert>\n<key>')\
+            "$KEY_DIR/$vpnuser".key\
+            <(echo -e '</key>\nkey-direction 1\n<tls-auth>')\
+            "$KEY_DIR"/ta.key\
+            <(echo -e '</tls-auth>')\
+            >> "$OVPN_FILE"
+}
+
 export_vars
 [ $FIRST_RUN_KEY -eq 1 ] && first_run
+
+case "$1" in
+        add)
+            [ -z "$2" ] || exit 223
+            vpnuser="$(echo "$2" | tr -d "[:blank:]" | tr -d "[:punct:]" | tr -s "[:upper:]" "[:lower:]")"
+            add_user
+        ;;
+    revok)
+        export_vars
+        [ -z "$2" ] && exit 10
+        "$EASY_RSA"/revoke-full "$2"
+        ;;
+esac
