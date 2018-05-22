@@ -37,7 +37,6 @@
                 export KEY_EMAIL
                 export KEY_OU="DEF_UNIT"
                 export KEY_NAME="ovpnserver"
-                export FIRST_RUN_KEY=1
         # == Export Section End =============
     }
     set_vars (){
@@ -362,6 +361,7 @@
     }
 # ========= Function Section End ===================================
 
+    export FIRST_RUN_KEY=1
 
 if [ $FIRST_RUN_KEY -eq 1 ]; then
     dpkg-query -s easy-rsa 2>/dev/null | grep -iqE "^Status.*installed$" || install_string+="easy-rsa "
