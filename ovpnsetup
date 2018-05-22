@@ -149,23 +149,23 @@
                         echo
                     echo -en "Двух или трех буквенный код региона\\n\
                     \\rKEY_PROVINCE=\"$KEY_PROVINCE\": "
-                        read -r -n 2 key_province
+                        read -r -n 3 key_province
                         [ -z "$key_province" ] || KEY_PROVINCE="$( echo "$key_province"| tr '[:lower:]' '[:upper:]' )"
                         echo
                     echo -en "Название города\\n\
                     \\rKEY_CITY=\"$KEY_CITY\": "
                         read -r key_city
-                        [ -z "$key_city" ] || KEY_CITY="$key_city"
+                        [ -z "$key_city" ] || KEY_CITY="${key_city::24}"
                         echo
                     echo -en "Название органицации\\n\
                     \\rKEY_ORG=\"$KEY_ORG\": "
                         read -r key_org
-                        [ -z "$key_org" ] || KEY_ORG="$key_org"
+                        [ -z "$key_org" ] || KEY_ORG="${key_org::24}"
                         echo
                     echo -en "Электронные адрес\\n\
-                    \\rKEY_EMAIL=\"$(org_to_email "$KEY_ORG")\": "
+                    \\rKEY_EMAIL=\"$(org_to_email "${KEY_ORG::24}")\": "
                         read -r key_email
-                        [ -z "$key_email" ] && KEY_EMAIL="$(org_to_email "$KEY_ORG")"
+                        [ -z "$key_email" ] && KEY_EMAIL="$(org_to_email "${KEY_ORG::15}")"
                         [ -z "$key_email" ] || KEY_EMAIL="$key_email"
                         echo
                     echo -en "Название подразделения\\n\
@@ -176,7 +176,7 @@
                     echo -en "Название которое Вы хотите дать своему VPN серверу\\n\
                     \\rKEY_NAME=\"$KEY_NAME\": "
                         read -r key_name
-                        [ -z "$key_name" ] || KEY_NAME="$key_name"
+                        [ -z "$key_name" ] || KEY_NAME="${key_name::24}"
                         echo
                     f_clr
                     echo -en "\\e[1;33mБудут установлены следующие значения.\\e[0m\\n\
