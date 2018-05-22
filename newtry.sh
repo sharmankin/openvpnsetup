@@ -66,7 +66,7 @@
     }
     make_conf_file () {
         echo -e "mode server\\n\
-                proto udp\\n\
+                proto udp4\\n\
                 dev tun\\n\
                 port $(while [ "${s:-0}" -ne 1 ];do e=$RANDOM;echo $e | grep -qE "^[1-9]{4}$" && s=1 && echo $e;done)\\n\
                 tun-mtu 1500\\n\
@@ -289,10 +289,10 @@
             exit 990
         fi
         "$EASY_RSA"/pkitool "$vpnuser"
-        CLIENT_DIR="$EASY_RSA/clients_files/$vpnuser/"
+        CLIENT_DIR="$EASY_RSA/clients_files/$vpnuser"
         OVPN_FILE="$CLIENT_DIR/${vpnuser}_${KEY_NAME}.ovpn"
         mkdir -p "$CLIENT_DIR"
-        zip -qj "$CLIENT_DIR/${vpnuser}_${KEY_NAME}.zip" "$KEY_DIR"/{"$vpnuser".key,"$vpnuser".crt,ta.key,ca.crt}
+        zip -qj "$CLIENT_DIR/${vpnuser}_${KEY_NAME}_keyset.zip" "$KEY_DIR"/{"$vpnuser".key,"$vpnuser".crt,ta.key,ca.crt}
         echo "$vpnuser:$CLIENT_DIR:active" >> "$EASY_RSA/registred_users"
 
             REMOTE="$(curl -s -4 https://wtfismyip.com/text)"
@@ -347,6 +347,10 @@
         if ! grep -qE "^$vpnuser:" "$EASY_RSA/registred_users" ;then
             echo -e "Пользователь с именем $vpnuser не зарегистрирован на сервере."
             exit 991
+        fi
+        if [[ "$(awk -F ":" '$1 == user {print $3}' user="$vpnuser" "$EASY_RSA"/registred_users)" == "revoked" ]] ;then
+            echo -e "Пользователь с именем $vpnuser был зарегистрирован и заблокирован на сервере."
+            exit 992
         fi
         "$EASY_RSA/revoke-full" "$vpnuser"
         sudo cp -f "$KEY_DIR"/crl.pem /etc/openvpn
