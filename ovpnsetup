@@ -364,12 +364,12 @@
     export FIRST_RUN_KEY=1
 
 if [ $FIRST_RUN_KEY -eq 1 ]; then
-    dpkg-query -s easy-rsa 2>/dev/null | grep -iqE "^Status.*installed$" || install_string+="easy-rsa "
-    dpkg-query -s openvpn 2>/dev/null | grep -iqE "^Status.*installed$" || install_string+="openvpn"
+    dpkg-query -s easy-rsa 2>/dev/null | grep -iqE "^Status.*installed$" || install_ersa="easy-rsa"
+    dpkg-query -s openvpn 2>/dev/null | grep -iqE "^Status.*installed$" || install_ovpn="openvpn"
 
-    if ! [ -z $install_string ];then
-        sudo apt-get install -y $install_string | while read -r;do
-            stage="\\rУстановка $install_string # "
+    if ! [ -z "$install_ersa$install_ovpn" ];then
+        sudo apt-get install -y $install_ovpn $install_ersa | while read -r;do
+            stage="\\rУстановка $install_ersa $install_ovpn # "
             spaser+="="
             arrow=">"
 
@@ -377,7 +377,7 @@ if [ $FIRST_RUN_KEY -eq 1 ]; then
 
             full_string="${stage}${spaser}${arrow}"
             echo -en "$full_string"
-        done
+        done && echo
         [ "$(find "$HOME" -type l -name pkitool | wc -l)" -eq 0 ] && make-cadir "$HOME/vpn-ca"
     fi
     export_vars
