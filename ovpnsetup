@@ -47,14 +47,16 @@
             ;;
             *)
             echo -e "Для управления OpenVPN сервером используйте следующие переметры:\\n\
-            \\r\\e[1;32madd\\e[0m - Добавление нового пользователя\\n\
-            \\r\\e[1;32mdel\\e[0m - Удаление и блокировка существующего пользователя\\n\
-            \\r\\e[1;32museropt\\e[0m - Модификация мользовательского профиля\\n\
-            \\r\\e[1;32monline\\e[0m - Просмотр данных пользователей подключенных в текущий момент к серверу\\n\\n\
-            \\r\\e[1;32mrestart\\e[0m - Перезагрузка сервера (используется, как правило после изменения конфигурации сервера\\n\
-            \\r\\e[1;32mstop\\e[0m - Остановка OpenVPN сервера\\n\
-            \\r\\e[1;32mstart\\e[0m - Запуск OpenVPN сервера\\n\
-            \\r\\e[1;32medit\\e[0m - Редактирование конфигурации OpenVPN сервера"
+            \\r\\e[1;33madd\\e[0m - Добавление нового пользователя\\n\
+            \\r\\e[1;33mdel\\e[0m - Удаление и блокировка существующего пользователя\\n\
+            \\r\\e[1;33museropt\\e[0m - Модификация мользовательского профиля\\n\
+            \\r\\e[1;33monline\\e[0m - Просмотр данных пользователей подключенных в текущий момент к серверу\\n\\n\
+            \\r\\e[1;33mrestart\\e[0m - Перезагрузка сервера (используется, как правило после изменения конфигурации сервера\\n\
+            \\r\\e[1;33mstop\\e[0m - Остановка OpenVPN сервера\\n\
+            \\r\\e[1;33mstart\\e[0m - Запуск OpenVPN сервера\\n\
+            \\r\\e[1;33medit\\e[0m - Редактирование конфигурации OpenVPN сервера\\n\
+            \\r\\e[1;33mlog\\e[0m - Просмотр лога текущей сессии OpenVPN сервера\\n\
+            \\r\\e[1;33mlog full\\e[0m - Просмотр полного лога OpenVPN сервера"
         esac
         [[ "$1" == "noexit" ]] || exit 100
     }
@@ -71,7 +73,6 @@
         echo "info@${rslt}.org"
     }
     set_vars (){
-        [ "$EASY_RSA" ] || exit 10
         sed -ri "/^ +# == Export Section Begin/,/^ +# == Export Section End/{\
             /^ +EASY_RSA/s/\".*\"/\"${EASY_RSA//\//\\\/}\"/;\
             /^ +KEY_CONFIG/s/\".*\"/\"${KEY_CONFIG//\//\\\/}\"/;\
@@ -82,8 +83,8 @@
             /^ +export KEY_ORG/s/\".*\"/\"$KEY_ORG\"/;\
             /^ +KEY_EMAIL/s/\".*\"/\"$KEY_EMAIL\"/;\
             /^ +export KEY_OU/s/\".*\"/\"$KEY_OU\"/;\
-            /^ +export KEY_NAME/s/\".*\"/\"$KEY_NAME\"/\
-            /^ +export MAIN_EDITOR/s/\".*\"/\"$MAIN_EDITOR\"/\
+            /^ +export KEY_NAME/s/\".*\"/\"$KEY_NAME\"/;\
+            /^ +export MAIN_EDITOR/s/\".*\"/\"${MAIN_EDITOR//\//\\\/}\"/\
         }" "$0"
     }
     rand_network () {
@@ -231,11 +232,10 @@
                         if sudo systemctl start openvpn@"$KEY_NAME" 2>/dev/null; then
                             sudo systemctl enable openvpn@"$KEY_NAME" >/dev/null
                             f_clr
-                            echo -e "\\e[1;32m=======================================================================\\e[0m\\n\
-                            \\rOpenVPN сервер \\e[1;32m$KEY_NAME\\e[0m Установлен и запущен без ошибок\\n\
-                            \\r\\e[1;32m=======================================================================\\e[0m\\n\\r"
+                            echo -e "\\e[1;32m    #=======================================================================\\e[0m\\n\
+                            \\r    \\e[1;32m#\\e[0m OpenVPN сервер \\e[1;32m$KEY_NAME\\e[0m Установлен и запущен без ошибок\\n\
+                            \\r\\e[1;32m    #=======================================================================\\e[0m\\n\\r"
                             accepted=1
-                            sudo cat /etc/openvpn/"$KEY_NAME".conf
                             sudo sed -i '/net.ipv4.ip_forward/s/^#//' /etc/sysctl.conf
                             echo 1 | sudo tee /proc/sys/net/ipv4/ip_forward > /dev/null
                             sudo sysctl -p > /dev/null
@@ -399,6 +399,7 @@
         sudo chown root:root /etc/openvpn/crl.pem
         sudo sed -ri '/crl-verify/s/^# ?//' /etc/openvpn/"$KEY_NAME".conf
         sudo sed -ri "/^${vpnuser}:/s/active/revoked/"  "$EASY_RSA/registred_users"
+        sudo rm -f /etc/openvpn/ccd/"$vpnuser" 2>/dev/null
         sudo systemctl restart openvpn@"$KEY_NAME"
     }
     restart_vpn () {
@@ -410,7 +411,10 @@
     start_vpn () {
         sudo systemctl start openvpn@"$KEY_NAME"
     }
-
+    status_vpn () {
+        echo -e "\\e[0;35mДля выхода нажмите \"q\""
+        sudo systemctl status openvpn@"$KEY_NAME"
+    }
 # ========= Function Section End ===================================
 
 export_vars
@@ -441,7 +445,7 @@ case "$1" in
     useropt)
         [ -z "$2" ] && user_help 225
         vpnuser="$2"
-        grep -qE "^$2:.*:revoked" "$EASY_RSA"/registred_users || user_help 226 "$vpnuser"
+        grep -qE "^$2:.*:revoked" "$EASY_RSA"/registred_users && user_help 226 "$vpnuser"
         grep -qE "^$2:.*:active" "$EASY_RSA"/registred_users || user_help 227 "$vpnuser"
 
         echo "$MAIN_EDITOR" | grep -q "nano" && opt="-m"
@@ -456,6 +460,9 @@ case "$1" in
         ;;
     online)
         sudo lnav /var/log/openvpn/openvpn-status.log
+        ;;
+        status)
+        status_vpn
         ;;
         *)
         user_help
