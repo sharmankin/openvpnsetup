@@ -32,7 +32,6 @@
     f_clr () {
         yes "" | head -n "$(tput lines)"
     }
-
     user_help () {
         case "$1" in
             223|224|225|228)
@@ -74,7 +73,7 @@
             rm "$EASY_RSA"/mvers
     }
     org_to_email () {
-        rslt="$(echo "$1" | tr -d "[:blank:]" | tr -d "[:punct:]" | tr -s "[:upper:]" "[:lower:]")"
+        rslt="$(echo "$1" | tr -d "[:blank:]" | tr -d "[:punct:]" | tr "[:upper:]" "[:lower:]")"
         echo "info@${rslt}.org"
     }
     set_vars (){
@@ -106,8 +105,10 @@
         while ip addr | grep -qE "192.${rnd_net_seg_1}.${rnd_net_seg_2}"; do
             rnd_net_seg_1=$(rand_network)
             rnd_net_seg_2=$(rand_network)
-            ip addr | grep -qE "192.$rnd_net_seg_1.$rnd_net_seg_2" || echo "$rnd_net_seg_1.$rnd_net_seg_2"
-            return
+            if ! ip addr | grep -qE "192.$rnd_net_seg_1.$rnd_net_seg_2"; then
+                echo "$rnd_net_seg_1.$rnd_net_seg_2"
+                return
+            fi
         done
         echo "$rnd_net_seg_1.$rnd_net_seg_2"
     }
@@ -115,7 +116,9 @@
         echo -e "mode server\\n\
                 proto udp4\\n\
                 dev tun\\n\
-                port $(while [ "${s:-0}" -ne 1 ];do e=$RANDOM;echo $e | grep -qE "^[1-9]{4}$" && s=1 && echo $e;done)\\n\
+                port $(while [ "${s:-0}" -ne 1 ];do e=$(( RANDOM % 9999 ));echo $e | grep -qE "^[1-9]{4}$" && s=1 && echo $e;done)\\n\
+                sndbuf 0\\n\
+                rcvbuf 0\\n\
                 tun-mtu 1500\\n\
                 mssfix 0\\n\
                 tls-server\\n\
@@ -368,14 +371,17 @@
         echo -e "
             client\\n\
             dev tun\\n\
+            remote $REMOTE $PORT udp\\n\
             auth-nocache\\n\
             float\\n\
             nobind\\n\
+            sndbuf 0\\n\
+            rcvbuf 0\\n\
+            keepalive 10 30\\n\
             explicit-exit-notify 1\\n\
             tun-mtu $TUN_MTU\\n\
             mtu-test\\n\
             mssfix $MSSFIX\\n\
-            remote $REMOTE $PORT udp\\n\
             resolv-retry infinite\\n\
             user nobody\\n\
             group nogroup\\n\
@@ -417,9 +423,9 @@
         sudo cp -f "$KEY_DIR"/crl.pem /etc/openvpn
         sudo chown root:root /etc/openvpn/crl.pem
         sudo sed -ri '/crl-verify/s/^# ?//' /etc/openvpn/"$KEY_NAME".conf
-        sudo sed -ri "/^${vpnuser}:/s/active/revoked/"  "$EASY_RSA/registred_users"
+        sed -ri "/^${vpnuser}:/s/active/revoked/"  "$EASY_RSA/registred_users"
         sudo rm -f /etc/openvpn/ccd/"$vpnuser" 2>/dev/null
-        suod rm -rf "$EASY_RSA"/clients_files/"$vpnuser"
+        rm -rf "$EASY_RSA"/clients_files/"$vpnuser"
         sudo systemctl restart openvpn@"$KEY_NAME"
     }
     restart_vpn () {
@@ -441,7 +447,7 @@ export_vars
 case "$1" in
     add)
         [ -z "$2" ] && user_help 223
-        vpnuser="$(echo "$2" | tr -d "[:blank:]" | tr -d "[:punct:]" | tr -s "[:upper:]" "[:lower:]")"
+        vpnuser="$(echo "$2" | tr -d "[:blank:]" | tr -d "[:punct:]" | tr "[:upper:]" "[:lower:]")"
         add_user
         ;;
     del)
@@ -465,8 +471,8 @@ case "$1" in
     useropt)
         [ -z "$2" ] && user_help 225
         vpnuser="$2"
-        grep -qE "^$2:.*:revoked" "$EASY_RSA"/registred_users && user_help 226 "$vpnuser"
-        grep -qE "^$2:.*:active" "$EASY_RSA"/registred_users || user_help 227 "$vpnuser"
+        grep -qE "^$2:.*:revoked" "$EASY_RSA"/registred_users 2>/dev/null && user_help 226 "$vpnuser"
+        grep -qE "^$2:.*:active" "$EASY_RSA"/registred_users 2>/dev/null || user_help 227 "$vpnuser"
 
         echo "$MAIN_EDITOR" | grep -q "nano" && opt="-m"
         sudo "$MAIN_EDITOR" $opt /etc/openvpn/ccd/"$2"
@@ -474,11 +480,11 @@ case "$1" in
     clientopt)
         [ -z "$2" ] && user_help 228
         vpnuser="$2"
-        grep -qE "^$2:.*:revoked" "$EASY_RSA"/registred_users && user_help 226 "$vpnuser"
-        grep -qE "^$2:.*:active" "$EASY_RSA"/registred_users || user_help 227 "$vpnuser"
+        grep -qE "^$2:.*:revoked" "$EASY_RSA"/registred_users 2>/dev/null && user_help 226 "$vpnuser"
+        grep -qE "^$2:.*:active" "$EASY_RSA"/registred_users 2>/dev/null || user_help 227 "$vpnuser"
 
         echo "$MAIN_EDITOR" | grep -q "nano" && opt="-m"
-        sudo "$MAIN_EDITOR" $opt "$EASY_RSA"/clients_files/"$2"/"$2".ovpn
+        sudo "$MAIN_EDITOR" $opt "$EASY_RSA"/clients_files/"$2"/"$2"_"$KEY_NAME".ovpn
         ;;
     log)
         if [[ "$2" == "full" ]];then
