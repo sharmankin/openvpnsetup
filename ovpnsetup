@@ -368,13 +368,13 @@ if [ $FIRST_RUN_KEY -eq 1 ]; then
 
     if ! [ -z "$install_ersa$install_ovpn" ];then
         sudo apt-get install -y $install_ovpn $install_ersa | while read -r;do
-            stage="\\rУстановка $install_ersa $install_ovpn # "
+            action="\\rУстановка $install_ersa $install_ovpn # "
             spaser+="="
             arrow=">"
 
-            [ $(( ${#stage} + ${#spaser} + ${#arrow} )) -ge "$(tput cols)" ] && spaser="="
+            [ $(( ${#action} + ${#spaser} + ${#arrow} )) -ge "$(tput cols)" ] && spaser="="
 
-            full_string="${stage}${spaser}${arrow}"
+            full_string="${action}${spaser}${arrow}"
             echo -en "$full_string"
         done && echo
         [ "$(find "$HOME" -type l -name pkitool | wc -l)" -eq 0 ] && make-cadir "$HOME/vpn-ca"
