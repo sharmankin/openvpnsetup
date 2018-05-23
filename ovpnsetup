@@ -51,7 +51,7 @@
             \\r\\e[1;33mdel\\e[0m - Удаление и блокировка существующего пользователя\\n\
             \\r\\e[1;33museropt\\e[0m - Модификация мользовательского профиля\\n\
             \\r\\e[1;33monline\\e[0m - Просмотр данных пользователей подключенных в текущий момент к серверу\\n\\n\
-            \\r\\e[1;33mrestart\\e[0m - Перезагрузка сервера (используется, как правило после изменения конфигурации сервера\\n\
+            \\r\\e[1;33mrestart\\e[0m - Перезагрузка сервера (используется, как правило после изменения конфигурации сервера)\\n\
             \\r\\e[1;33mstop\\e[0m - Остановка OpenVPN сервера\\n\
             \\r\\e[1;33mstart\\e[0m - Запуск OpenVPN сервера\\n\
             \\r\\e[1;33medit\\e[0m - Редактирование конфигурации OpenVPN сервера\\n\
@@ -84,7 +84,7 @@
             /^ +KEY_EMAIL/s/\".*\"/\"$KEY_EMAIL\"/;\
             /^ +export KEY_OU/s/\".*\"/\"$KEY_OU\"/;\
             /^ +export KEY_NAME/s/\".*\"/\"$KEY_NAME\"/;\
-            /^ +export MAIN_EDITOR/s/\".*\"/\"${MAIN_EDITOR//\//\\\/}\"/\
+            /^ +MAIN_EDITOR/s/\".*\"/\"${MAIN_EDITOR//\//\\\/}\"/\
         }" "$0"
     }
     rand_network () {
@@ -93,6 +93,13 @@
             if [ $segment -gt 10 ] ;then
                 [ "$(( segment / 8 * 8 ))" -eq $segment ] && match=1 && echo $segment
             fi
+        done
+    }
+    check_network () {
+        while ip addr | grep -qE "192.$rnd_net_seg_1.$rnd_net_seg_2"; do
+            rnd_net_seg_1=$(rand_network)
+            rnd_net_seg_2=$(rand_network)
+            ip addr | grep -qE "192.$rnd_net_seg_1.$rnd_net_seg_2" || echo "$rnd_net_seg_1.$rnd_net_seg_2"
         done
     }
     make_conf_file () {
@@ -107,7 +114,7 @@
                 cert /etc/openvpn/keys/$KEY_NAME.crt\\n\
                 key /etc/openvpn/keys/$KEY_NAME.key\\n\
                 dh /etc/openvpn/keys/dh$KEY_SIZE.pem\\n\
-                server 192.$(rand_network).$(rand_network).0 255.255.255.0\\n\
+                server 192.$(check_network).0 255.255.255.0\\n\
                 ifconfig-pool-persist ipp.txt\\n\
                 client-config-dir ccd\\n\
                 push \"redirect-gateway def1 bypass-dhcp\"\\n\
@@ -327,8 +334,8 @@
         [ -d "$EASY_RSA/clients_files" ] || mkdir -p "$EASY_RSA/clients_files"
         [ -f "$EASY_RSA/registred_users" ] || touch "$EASY_RSA/registred_users"
         if grep -qE "^$vpnuser:" "$EASY_RSA/registred_users" ;then   # Доработать с учетом ID пользователя
-            echo -e "Пользователь с именем $vpnuser уже зарегистрирован на сервере.\\n\
-            \\rВыберите другое имя для регистрируемого пользователя"
+            echo -e "\\e[1;33mПользователь с именем $vpnuser уже зарегистрирован на сервере.\\n\
+            \\rВыберите другое имя для регистрируемого пользователя\\e[0m"
             exit 990
         fi
         "$EASY_RSA"/pkitool "$vpnuser"
@@ -400,6 +407,7 @@
         sudo sed -ri '/crl-verify/s/^# ?//' /etc/openvpn/"$KEY_NAME".conf
         sudo sed -ri "/^${vpnuser}:/s/active/revoked/"  "$EASY_RSA/registred_users"
         sudo rm -f /etc/openvpn/ccd/"$vpnuser" 2>/dev/null
+        suod rm -rf "$EASY_RSA"/clients_files/"$vpnuser"
         sudo systemctl restart openvpn@"$KEY_NAME"
     }
     restart_vpn () {
