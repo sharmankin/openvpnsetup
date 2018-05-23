@@ -364,7 +364,7 @@
     }
 # ========= Function Section End ===================================
 
-# == Section For Remove Begin ======================================
+    # == Section For Remove Begin ======================================
     export FIRST_RUN_KEY=1
 
 if [ $FIRST_RUN_KEY -eq 1 ]; then
@@ -388,7 +388,7 @@ if [ $FIRST_RUN_KEY -eq 1 ]; then
     first_run
 fi
 
-# == Section For Remove End ======================================
+    # == Section For Remove End ======================================
 
 export_vars
 case "$1" in
