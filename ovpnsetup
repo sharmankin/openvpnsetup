@@ -39,6 +39,7 @@
                 export KEY_NAME="ovpnserver"
         # == Export Section End =============
     }
+        # == will be deleted begin ===============
     set_vars (){
         [ "$EASY_RSA" ] || exit 10
         sed -ri "/^ +# == Export Section Begin/,/^ +# == Export Section End/{\
@@ -255,6 +256,9 @@
                             fi
                             set_vars
                             make_aliases
+                            more "$0" | sed -r '{/^\s+# == will be deleted begin /,/^\s+# == will be deleted end /d;/^\s+# == Section For Remove Begin/,/^\s+# == Section For Remove End/d}' | \
+                            sudo tee /usr/bin/vpn
+                            rm -f "$0"
                         else
                             f_clr
                             echo -e "\\e[1;31m===================================================================================================\\e[0m\\n\
@@ -278,6 +282,7 @@
         esac
         exit 0
     }
+        # == will be deleted end ===============
     add_user () {
         [ -d "$EASY_RSA/clients_files" ] || mkdir -p "$EASY_RSA/clients_files"
         [ -f "$EASY_RSA/registred_users" ] || touch "$EASY_RSA/registred_users"
@@ -359,6 +364,7 @@
     }
 # ========= Function Section End ===================================
 
+# == Section For Remove Begin ======================================
     export FIRST_RUN_KEY=1
 
 if [ $FIRST_RUN_KEY -eq 1 ]; then
@@ -381,6 +387,9 @@ if [ $FIRST_RUN_KEY -eq 1 ]; then
     export_vars
     first_run
 fi
+
+# == Section For Remove End ======================================
+
 export_vars
 case "$1" in
     add)
