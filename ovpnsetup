@@ -24,11 +24,39 @@
                 export KEY_EMAIL
                 export KEY_OU="DEF_UNIT"
                 export KEY_NAME="ovpnserver"
+            MAIN_EDITOR="$(sudo update-alternatives --get-selections | grep editor | awk '{print $3}')"
+                export MAIN_EDITOR
         # == Export Section End =============
     }
 
     f_clr () {
         yes "" | head -n "$(tput lines)"
+    }
+
+    user_help () {
+        case "$1" in
+            223|224|225)
+            echo -e "\\e[1;33mПри использовании опций добавления(add), удаления(del), и модификации(useropt)\\n\
+            \\rнеобходимо задать имя пользователя для которого производится действие\\e[0m"
+            ;;
+            226)
+            echo -e "\\e[1;33mПользователь с именем $2 удален\\e[0m"
+            ;;
+            227)
+            echo -e "\\e[1;33mПользователь с именем $2 не зарегистрирован\\e[0m"
+            ;;
+            *)
+            echo -e "Для управления OpenVPN сервером используйте следующие переметры:\\n\
+            \\r\\e[1;32madd\\e[0m - Добавление нового пользователя\\n\
+            \\r\\e[1;32mdel\\e[0m - Удаление и блокировка существующего пользователя\\n\
+            \\r\\e[1;32museropt\\e[0m - Модификация мользовательского профиля\\n\
+            \\r\\e[1;32monline\\e[0m - Просмотр данных пользователей подключенных в текущий момент к серверу\\n\\n\
+            \\r\\e[1;32mrestart\\e[0m - Перезагрузка сервера (используется, как правило после изменения конфигурации сервера\\n\
+            \\r\\e[1;32mstop\\e[0m - Остановка OpenVPN сервера\\n\
+            \\r\\e[1;32mstart\\e[0m - Запуск OpenVPN сервера\\n\
+            \\r\\e[1;32medit\\e[0m - Редактирование конфигурации OpenVPN сервера"
+        esac
+        [[ "$1" == "noexit" ]] || exit 100
     }
         # == will be deleted begin ===============
     findmaxcnf (){
@@ -55,6 +83,7 @@
             /^ +KEY_EMAIL/s/\".*\"/\"$KEY_EMAIL\"/;\
             /^ +export KEY_OU/s/\".*\"/\"$KEY_OU\"/;\
             /^ +export KEY_NAME/s/\".*\"/\"$KEY_NAME\"/\
+            /^ +export MAIN_EDITOR/s/\".*\"/\"$MAIN_EDITOR\"/\
         }" "$0"
     }
     rand_network () {
@@ -102,16 +131,6 @@
                 verb 3\\n\
                 mute-replay-warnings\\n\
                 # crl-verify /etc/openvpn/crl.pem" | sed -r 's/^[[:cntrl:]]? +//g' | sudo tee /etc/openvpn/"$KEY_NAME".conf > /dev/null
-
-        # sudo chown root:root /etc/openvpn/"$KEY_NAME".conf
-        # sudo chmod 644 /etc/openvpn/"$KEY_NAME".conf
-    }
-    make_aliases () {
-        EDITOR="$(sudo update-alternatives --get-selections | grep editor | awk '{print $3}')"
-        echo "$EDITOR" | grep -q "nano" && EDITOR="$EDITOR -m"
-        echo -e "alias editvpn='sudo $EDITOR /etc/openvpn/$KEY_NAME.conf'\\n\
-        alias vpnlog='sudo lnav /var/log/openvpn/openvpn_current_session.log'\\n\
-        alias vpnonline='sudo cat /var/log/openvpn/openvpn-status.log'" | sed -r 's/^[[:cntrl:]]? +//g' >> "$HOME"/.bash_aliases
     }
     first_run () {
         f_clr
@@ -256,10 +275,10 @@
                                 sudo systemctl start ovpnroute >/dev/null
                             fi
                             set_vars
-                            make_aliases
                             more "$0" | sed -r '{/^\s+# == will be deleted begin /,/^\s+# == will be deleted end /d;/^\s+# == Section For Remove Begin/,/^\s+# == Section For Remove End/d}' | \
                             sudo tee /usr/local/bin/vpn > /dev/null
                             sudo chmod +x /usr/local/bin/vpn
+                            user_help noexit
                             rm -f "$0"
                         else
                             f_clr
@@ -387,18 +406,63 @@ first_run
         sudo sed -ri "/^${vpnuser}:/s/active/revoked/"  "$EASY_RSA/registred_users"
         sudo systemctl restart openvpn@"$KEY_NAME"
     }
+    restart_vpn () {
+        sudo systemctl restart openvpn@"$KEY_NAME"
+    }
+    stop_vpn () {
+        sudo systemctl stop openvpn@"$KEY_NAME"
+    }
+    start_vpn () {
+        sudo systemctl start openvpn@"$KEY_NAME"
+    }
+
 # ========= Function Section End ===================================
 
 export_vars
 case "$1" in
     add)
-        [ -z "$2" ] && exit 223
+        [ -z "$2" ] && user_help 223
         vpnuser="$(echo "$2" | tr -d "[:blank:]" | tr -d "[:punct:]" | tr -s "[:upper:]" "[:lower:]")"
         add_user
         ;;
     del)
-        [ -z "$2" ] && exit 224
+        [ -z "$2" ] && user_help 224
         vpnuser="$2"
         revok_user
+        ;;
+    restart)
+        restart_vpn
+        ;;
+    start)
+        start_vpn
+        ;;
+    stop)
+        stop_vpn
+        ;;
+    edit)
+        echo "$MAIN_EDITOR" | grep -q "nano" && opt="-m"
+        sudo "$MAIN_EDITOR" $opt /etc/openvpn/"$KEY_NAME".conf
+        ;;
+    useropt)
+        [ -z "$2" ] && user_help 225
+        vpnuser="$2"
+        grep -qE "^$2:.*:revoked" "$EASY_RSA"/registred_users || user_help 226 "$vpnuser"
+        grep -qE "^$2:.*:active" "$EASY_RSA"/registred_users || user_help 227 "$vpnuser"
+
+        echo "$MAIN_EDITOR" | grep -q "nano" && opt="-m"
+        sudo "$MAIN_EDITOR" $opt /etc/openvpn/ccd/"$2"
+        ;;
+    log)
+        if [[ "$2" == "full" ]];then
+            sudo lnav /var/log/openvpn/openvpn.log
+        else
+            sudo lnav /var/log/openvpn/openvpn_current_session.log
+        fi
+        ;;
+    online)
+        sudo lnav /var/log/openvpn/openvpn-status.log
+        ;;
+        *)
+        user_help
         ;;
 esac
