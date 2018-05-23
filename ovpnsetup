@@ -411,8 +411,8 @@
                 >> "$OVPN_FILE"
     }
     revok_user () {
-        if ! grep -qE "^$vpnuser:" "$EASY_RSA/registred_users" ;then
-            echo -e "Пользователь с именем $vpnuser не зарегистрирован на сервере."
+        if ! grep -qE "^$vpnuser:" "$EASY_RSA/registred_users" 2>/dev/null;then
+            echo -e "\\e[1;33mПользователь с именем $vpnuser не зарегистрирован на сервере.\\e[0m"
             exit 991
         fi
         if [[ "$(awk -F ":" '$1 == user {print $3}' user="$vpnuser" "$EASY_RSA"/registred_users)" == "revoked" ]] ;then
