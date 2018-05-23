@@ -257,7 +257,8 @@
                             set_vars
                             make_aliases
                             more "$0" | sed -r '{/^\s+# == will be deleted begin /,/^\s+# == will be deleted end /d;/^\s+# == Section For Remove Begin/,/^\s+# == Section For Remove End/d}' | \
-                            sudo tee /usr/bin/vpn
+                            sudo tee /usr/local/bin/vpn > /dev/null
+                            sudo chmod +x /usr/local/bin/vpn
                             rm -f "$0"
                         else
                             f_clr
