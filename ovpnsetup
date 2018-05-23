@@ -47,16 +47,16 @@
             ;;
             *)
             echo -e "     \\e[1;35mДля управления OpenVPN сервером используйте команду \\e[1;33mvpn\\e[0m \\e[1;35mсо следующими переметрами:\\e[0m\\n\\n\
-            \\r     \\e[1;33madd \"username\"\\e[0m - Добавление нового пользователя\\n\
-            \\r     \\e[1;33mdel \"username\"\\e[0m - Удаление и блокировка существующего пользователя\\n\
-            \\r     \\e[1;33museropt \"username\"\\e[0m - Модификация пользовательского профиля\\n\
-            \\r     \\e[1;33monline\\e[0m - Просмотр данных пользователей подключенных в текущий момент к серверу\\n\\n\
-            \\r     \\e[1;33mrestart\\e[0m - Перезагрузка сервера (используется, как правило после изменения конфигурации сервера)\\n\
-            \\r     \\e[1;33mstop\\e[0m - Остановка OpenVPN сервера\\n\
-            \\r     \\e[1;33mstart\\e[0m - Запуск OpenVPN сервера\\n\
-            \\r     \\e[1;33medit\\e[0m - Редактирование конфигурации OpenVPN сервера\\n\
-            \\r     \\e[1;33mlog\\e[0m - Просмотр лога текущей сессии OpenVPN сервера\\n\
-            \\r     \\e[1;33mlog full\\e[0m - Просмотр полного лога OpenVPN сервера\\n\
+            \\r     \\e[1;33madd \"username\"\\e[0m \\t\\t- Добавление нового пользователя\\n\
+            \\r     \\e[1;33mdel \"username\"\\e[0m \\t\\t- Удаление и блокировка существующего пользователя\\n\
+            \\r     \\e[1;33museropt \"username\"\\e[0m \\t- Модификация пользовательского профиля\\n\
+            \\r     \\e[1;33monline\\e[0m \\t\\t\\t- Просмотр данных пользователей подключенных в текущий момент к серверу\\n\\n\
+            \\r     \\e[1;33mrestart\\e[0m \\t\\t\\t- Перезагрузка сервера (используется, как правило после изменения конфигурации сервера)\\n\
+            \\r     \\e[1;33mstop\\e[0m \\t\\t\\t- Остановка OpenVPN сервера\\n\
+            \\r     \\e[1;33mstart\\e[0m \\t\\t\\t- Запуск OpenVPN сервера\\n\
+            \\r     \\e[1;33medit\\e[0m \\t\\t\\t- Редактирование конфигурации OpenVPN сервера\\n\
+            \\r     \\e[1;33mlog\\e[0m \\t\\t\\t- Просмотр лога текущей сессии OpenVPN сервера\\n\
+            \\r     \\e[1;33mlog full\\e[0m \\t\\t\\t- Просмотр полного лога OpenVPN сервера\\n\
             \\r\\n\
             \\r\\n\
             \\r\\n\
@@ -292,6 +292,7 @@
                                 sudo systemctl start ovpnroute >/dev/null
                             fi
                             set_vars
+                            sudo systemctl restart openvpn@"$KEY_NAME" 2>/dev/null
                             more "$0" | sed -r '{/^\s+# == will be deleted begin /,/^\s+# == will be deleted end /d;/^\s+# == Section For Remove Begin/,/^\s+# == Section For Remove End/d}' | \
                             sudo tee /usr/local/bin/vpn > /dev/null
                             sudo chmod +x /usr/local/bin/vpn
