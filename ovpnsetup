@@ -1,19 +1,6 @@
 #!/bin/bash
 # ========= Function Section Begin =================================
-    f_clr () {
-        yes "" | head -n "$(tput lines)"
-    }
-    findmaxcnf (){
-            find "$EASY_RSA" -maxdepth 1 -regex ".*openssl-.*.cnf" | while read -r cnf
-            do [[ ${maxvers:-0} < "$cnf" ]] && maxvers="$cnf" && echo "$maxvers" > "$EASY_RSA"/mvers
-            done
-            echo "$(<"$EASY_RSA"/mvers)"
-            rm "$EASY_RSA"/mvers
-    }
-    org_to_email () {
-        rslt="$(echo "$1" | tr -d "[:blank:]" | tr -d "[:punct:]" | tr -s "[:upper:]" "[:lower:]")"
-        echo "info@${rslt}.org"
-    }
+
     export_vars () {
         # == Export Section Begin ===========
             EASY_RSA="$(find "$HOME" -type l -name pkitool -exec dirname {} \; 2>/dev/null)"
@@ -39,7 +26,22 @@
                 export KEY_NAME="ovpnserver"
         # == Export Section End =============
     }
+
+    f_clr () {
+        yes "" | head -n "$(tput lines)"
+    }
         # == will be deleted begin ===============
+    findmaxcnf (){
+            find "$EASY_RSA" -maxdepth 1 -regex ".*openssl-.*.cnf" | while read -r cnf
+            do [[ ${maxvers:-0} < "$cnf" ]] && maxvers="$cnf" && echo "$maxvers" > "$EASY_RSA"/mvers
+            done
+            echo "$(<"$EASY_RSA"/mvers)"
+            rm "$EASY_RSA"/mvers
+    }
+    org_to_email () {
+        rslt="$(echo "$1" | tr -d "[:blank:]" | tr -d "[:punct:]" | tr -s "[:upper:]" "[:lower:]")"
+        echo "info@${rslt}.org"
+    }
     set_vars (){
         [ "$EASY_RSA" ] || exit 10
         sed -ri "/^ +# == Export Section Begin/,/^ +# == Export Section End/{\
@@ -54,7 +56,6 @@
             /^ +export KEY_OU/s/\".*\"/\"$KEY_OU\"/;\
             /^ +export KEY_NAME/s/\".*\"/\"$KEY_NAME\"/\
         }" "$0"
-        sed -ri '/^ +export FIRST_RUN_KEY/s/1/0/' "$0"
     }
     rand_network () {
         while [ "${match:-0}" -ne 1 ];do
@@ -200,7 +201,7 @@
                         "$EASY_RSA"/pkitool --initca "$initwithpass"
                         "$EASY_RSA"/pkitool --server "$KEY_NAME"
                         f_clr
-                        "$OPENSSL" dhparam -out "${KEY_DIR}"/dh${KEY_SIZE}.pem ${KEY_SIZE}
+                        "$OPENSSL" dhparam -out "${KEY_DIR}/dh${KEY_SIZE}.pem" "${KEY_SIZE}"
                         openvpn --genkey --secret "${KEY_DIR}"/ta.key
                         sudo mkdir -p /etc/openvpn/keys
                         sudo mkdir -p /var/log/openvpn
@@ -283,6 +284,30 @@
         esac
         exit 0
     }
+
+    export FIRST_RUN_KEY=1
+
+    if [ $FIRST_RUN_KEY -eq 1 ]; then
+        dpkg-query -s easy-rsa 2>/dev/null | grep -iqE "^Status.*installed$" || install_ersa="easy-rsa"
+        dpkg-query -s openvpn 2>/dev/null | grep -iqE "^Status.*installed$" || install_ovpn="openvpn"
+
+        if ! [ -z "$install_ersa$install_ovpn" ];then
+            sudo apt-get install -y $install_ovpn $install_ersa | while read -r;do
+                stage="\\rУстановка $install_ersa $install_ovpn # "
+                spaser+="="
+                arrow=">"
+
+                [ $(( ${#stage} + ${#spaser} + ${#arrow} )) -ge "$(tput cols)" ] && spaser="="
+
+                full_string="${stage}${spaser}${arrow}"
+                echo -en "$full_string"
+            done && echo
+            [ "$(find "$HOME" -type l -name pkitool | wc -l)" -eq 0 ] && make-cadir "$HOME/vpn-ca"
+        fi
+        export_vars
+        first_run
+    fi
+first_run
         # == will be deleted end ===============
     add_user () {
         [ -d "$EASY_RSA/clients_files" ] || mkdir -p "$EASY_RSA/clients_files"
@@ -306,7 +331,6 @@
             MSSFIX="$(grep -E "^mssfix " /etc/openvpn/"$KEY_NAME".conf | awk '{print $2}')"
             NCP_CIPHER="$(grep -E "^ncp-ciphers " /etc/openvpn/"$KEY_NAME".conf | awk '{print $2}')"
             TUN_MTU="$(grep -E "^tun-mtu " /etc/openvpn/"$KEY_NAME".conf | awk '{print $2}')"
-        #        COMPRESS="$(grep -E "^compress " /etc/openvpn/"$KEY_NAME".conf | awk '{print $2}')"
 
         echo -e "
             client\\n\
@@ -365,31 +389,6 @@
     }
 # ========= Function Section End ===================================
 
-    # == Section For Remove Begin ======================================
-    export FIRST_RUN_KEY=1
-
-if [ $FIRST_RUN_KEY -eq 1 ]; then
-    dpkg-query -s easy-rsa 2>/dev/null | grep -iqE "^Status.*installed$" || install_ersa="easy-rsa"
-    dpkg-query -s openvpn 2>/dev/null | grep -iqE "^Status.*installed$" || install_ovpn="openvpn"
-
-    if ! [ -z "$install_ersa$install_ovpn" ];then
-        sudo apt-get install -y $install_ovpn $install_ersa | while read -r;do
-            stage="\\rУстановка $install_ersa $install_ovpn # "
-            spaser+="="
-            arrow=">"
-
-            [ $(( ${#stage} + ${#spaser} + ${#arrow} )) -ge "$(tput cols)" ] && spaser="="
-
-            full_string="${stage}${spaser}${arrow}"
-            echo -en "$full_string"
-        done && echo
-        [ "$(find "$HOME" -type l -name pkitool | wc -l)" -eq 0 ] && make-cadir "$HOME/vpn-ca"
-    fi
-    export_vars
-    first_run
-fi
-
-    # == Section For Remove End ======================================
 export_vars
 case "$1" in
     add)
