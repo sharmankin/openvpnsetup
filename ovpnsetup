@@ -304,29 +304,24 @@
         exit 0
     }
 
-    export FIRST_RUN_KEY=1
+    dpkg-query -s easy-rsa 2>/dev/null | grep -iqE "^Status.*installed$" || install_ersa="easy-rsa"
+    dpkg-query -s openvpn 2>/dev/null | grep -iqE "^Status.*installed$" || install_ovpn="openvpn"
 
-    if [ $FIRST_RUN_KEY -eq 1 ]; then
-        dpkg-query -s easy-rsa 2>/dev/null | grep -iqE "^Status.*installed$" || install_ersa="easy-rsa"
-        dpkg-query -s openvpn 2>/dev/null | grep -iqE "^Status.*installed$" || install_ovpn="openvpn"
+    if ! [ -z "$install_ersa$install_ovpn" ];then
+        sudo apt-get install -y $install_ovpn $install_ersa | while read -r;do
+            stage="\\rУстановка $install_ersa $install_ovpn # "
+            spaser+="="
+            arrow=">"
 
-        if ! [ -z "$install_ersa$install_ovpn" ];then
-            sudo apt-get install -y $install_ovpn $install_ersa | while read -r;do
-                stage="\\rУстановка $install_ersa $install_ovpn # "
-                spaser+="="
-                arrow=">"
+            [ $(( ${#stage} + ${#spaser} + ${#arrow} )) -ge "$(tput cols)" ] && spaser="="
 
-                [ $(( ${#stage} + ${#spaser} + ${#arrow} )) -ge "$(tput cols)" ] && spaser="="
-
-                full_string="${stage}${spaser}${arrow}"
-                echo -en "$full_string"
-            done && echo
-            [ "$(find "$HOME" -type l -name pkitool | wc -l)" -eq 0 ] && make-cadir "$HOME/vpn-ca"
-        fi
-        export_vars
-        first_run
+            full_string="${stage}${spaser}${arrow}"
+            echo -en "$full_string"
+        done && echo
+        [ "$(find "$HOME" -type l -name pkitool | wc -l)" -eq 0 ] && make-cadir "$HOME/vpn-ca"
     fi
-first_run
+    export_vars
+    first_run
         # == will be deleted end ===============
     add_user () {
         [ -d "$EASY_RSA/clients_files" ] || mkdir -p "$EASY_RSA/clients_files"
