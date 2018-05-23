@@ -390,7 +390,6 @@ if [ $FIRST_RUN_KEY -eq 1 ]; then
 fi
 
     # == Section For Remove End ======================================
-
 export_vars
 case "$1" in
     add)
