@@ -36,7 +36,7 @@
     user_help () {
         case "$1" in
             223|224|225)
-            echo -e "\\e[1;33mПри использовании опций добавления(add), удаления(del), и модификации(useropt)\\n\
+            echo -e "\\e[1;33mПри использовании опций добавления(add), удаления(del) и модификации(useropt)\\n\
             \\rнеобходимо задать имя пользователя для которого производится действие\\e[0m"
             ;;
             226)
@@ -46,17 +46,21 @@
             echo -e "\\e[1;33mПользователь с именем $2 не зарегистрирован\\e[0m"
             ;;
             *)
-            echo -e "Для управления OpenVPN сервером используйте следующие переметры:\\n\
-            \\r\\e[1;33madd\\e[0m - Добавление нового пользователя\\n\
-            \\r\\e[1;33mdel\\e[0m - Удаление и блокировка существующего пользователя\\n\
-            \\r\\e[1;33museropt\\e[0m - Модификация мользовательского профиля\\n\
-            \\r\\e[1;33monline\\e[0m - Просмотр данных пользователей подключенных в текущий момент к серверу\\n\\n\
-            \\r\\e[1;33mrestart\\e[0m - Перезагрузка сервера (используется, как правило после изменения конфигурации сервера)\\n\
-            \\r\\e[1;33mstop\\e[0m - Остановка OpenVPN сервера\\n\
-            \\r\\e[1;33mstart\\e[0m - Запуск OpenVPN сервера\\n\
-            \\r\\e[1;33medit\\e[0m - Редактирование конфигурации OpenVPN сервера\\n\
-            \\r\\e[1;33mlog\\e[0m - Просмотр лога текущей сессии OpenVPN сервера\\n\
-            \\r\\e[1;33mlog full\\e[0m - Просмотр полного лога OpenVPN сервера"
+            echo -e "     \\e[1;35mДля управления OpenVPN сервером используйте команду \\e[1;33mvpn\\e[0m \\e[1;35mсо следующими переметрами:\\e[0m\\n\\n\
+            \\r     \\e[1;33madd \"username\"\\e[0m - Добавление нового пользователя\\n\
+            \\r     \\e[1;33mdel \"username\"\\e[0m - Удаление и блокировка существующего пользователя\\n\
+            \\r     \\e[1;33museropt \"username\"\\e[0m - Модификация пользовательского профиля\\n\
+            \\r     \\e[1;33monline\\e[0m - Просмотр данных пользователей подключенных в текущий момент к серверу\\n\\n\
+            \\r     \\e[1;33mrestart\\e[0m - Перезагрузка сервера (используется, как правило после изменения конфигурации сервера)\\n\
+            \\r     \\e[1;33mstop\\e[0m - Остановка OpenVPN сервера\\n\
+            \\r     \\e[1;33mstart\\e[0m - Запуск OpenVPN сервера\\n\
+            \\r     \\e[1;33medit\\e[0m - Редактирование конфигурации OpenVPN сервера\\n\
+            \\r     \\e[1;33mlog\\e[0m - Просмотр лога текущей сессии OpenVPN сервера\\n\
+            \\r     \\e[1;33mlog full\\e[0m - Просмотр полного лога OpenVPN сервера\\n\
+            \\r\\n\
+            \\r\\n\
+            \\r\\n\
+            "
         esac
         [[ "$1" == "noexit" ]] || exit 100
     }
@@ -96,11 +100,15 @@
         done
     }
     check_network () {
-        while ip addr | grep -qE "192.$rnd_net_seg_1.$rnd_net_seg_2"; do
+        rnd_net_seg_1=$(rand_network)
+        rnd_net_seg_2=$(rand_network)
+        while ip addr | grep -qE "192.${rnd_net_seg_1}.${rnd_net_seg_2}"; do
             rnd_net_seg_1=$(rand_network)
             rnd_net_seg_2=$(rand_network)
             ip addr | grep -qE "192.$rnd_net_seg_1.$rnd_net_seg_2" || echo "$rnd_net_seg_1.$rnd_net_seg_2"
+            return
         done
+        echo "$rnd_net_seg_1.$rnd_net_seg_2"
     }
     make_conf_file () {
         echo -e "mode server\\n\
@@ -237,7 +245,7 @@
                         make_conf_file
 
                         if sudo systemctl start openvpn@"$KEY_NAME" 2>/dev/null; then
-                            sudo systemctl enable openvpn@"$KEY_NAME" >/dev/null
+                            sudo systemctl enable openvpn@"$KEY_NAME" >/dev/null 2>&1
                             f_clr
                             echo -e "\\e[1;32m    #=======================================================================\\e[0m\\n\
                             \\r    \\e[1;32m#\\e[0m OpenVPN сервер \\e[1;32m$KEY_NAME\\e[0m Установлен и запущен без ошибок\\n\
@@ -277,8 +285,10 @@
                                 ExecStart=/sbin/iptables -t nat -A POSTROUTING -s $tun_network/24 -o $main_interface -j MASQUERADE\\n\\n\
                                 [Install]\\n\
                                 WantedBy=multi-user.target\\n" | sed -r 's/^ +//g' | sudo tee /etc/systemd/system/ovpnroute.service >/dev/null
+                                sudo systemctl stop openvpn >/dev/null 2>&1
+                                sudo systemctl disable openvpn >/dev/null 2>&1
                                 sudo systemctl daemon-reload >/dev/null
-                                sudo systemctl enable ovpnroute >/dev/null
+                                sudo systemctl enable ovpnroute >/dev/null 2>&1
                                 sudo systemctl start ovpnroute >/dev/null
                             fi
                             set_vars
