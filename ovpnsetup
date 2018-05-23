@@ -248,7 +248,7 @@
                             sudo systemctl enable openvpn@"$KEY_NAME" >/dev/null 2>&1
                             f_clr
                             echo -e "\\e[1;32m    #=======================================================================\\e[0m\\n\
-                            \\r    \\e[1;32m#\\e[0m OpenVPN сервер \\e[1;32m$KEY_NAME\\e[0m Установлен и запущен без ошибок\\n\
+                            \\r    \\e[1;32m#\\e[0m OpenVPN сервер \\e[1;32m$KEY_NAME\\e[0m установлен и запущен без ошибок\\n\
                             \\r\\e[1;32m    #=======================================================================\\e[0m\\n\\r"
                             accepted=1
                             sudo sed -i '/net.ipv4.ip_forward/s/^#//' /etc/sysctl.conf
