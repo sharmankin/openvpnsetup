@@ -3,6 +3,7 @@
 
     export_vars () {
         # == Export Section Begin ===========
+                export LANG=en_US
             EASY_RSA="$(find "$HOME" -type l -name pkitool -exec dirname {} \; 2>/dev/null)"
                 export EASY_RSA
                 export OPENSSL="openssl"
@@ -233,7 +234,7 @@
                     read -r -n 1 answer && echo
                     if [[ "$answer" == "y" ]]; then
                         echo -en "Установить мастер-пароль для управления пользователями OpenVPN сервера? [\\e[1;31my\\e[0m|\\e[1;32mN\\e[0m]]: "
-                        read -r -n 1 yespass
+                        read -r -n 1 yespass && echo
                         [[ "$yespass" == "y" ]] && initwithpass="--pass"
 
 
