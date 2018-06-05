@@ -121,6 +121,7 @@
                 sndbuf 0\\n\
                 rcvbuf 0\\n\
                 tun-mtu 1500\\n\
+                topology subnet\\n\
                 mssfix 0\\n\
                 tls-server\\n\
                 ca /etc/openvpn/keys/ca.crt\\n\
@@ -138,7 +139,7 @@
                 key-direction 0\\n\
                 tls-auth /etc/openvpn/keys/ta.key\\n\
                 cipher AES-256-CBC\\n\
-                auth SHA256\\n\
+                auth SHA384\\n\
                 ncp-ciphers AES-256-CBC\\n\
                 tls-timeout 3600\\n\
                 hand-window 3600\\n\
