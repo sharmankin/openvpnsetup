@@ -347,11 +347,28 @@ make_manager
 # }
 # help_err () { # == Обработчик ошибок
 #     case "$1" in
-#         1) ;;  # НАДО НАПИСАТЬ ХЕЛП !!!!!!!!!!
+#         1) printf '%b\n' '  Для управления OpenVPN используте команду \e[1;33mvpn\e[m со следующими опциями:' \
+#                          '=============================================================================================' \
+#                          '  \e[1;33madd [username]\e[m \t- Добавление пользователя, ' \
+#                          '  \t\t\t    создание фалов профиля и ключей пользователя;' \
+#                          '  \e[1;33mrevok [username]\e[m\t- Блокировка ключей пользователя, ' \
+#                          '  \t\t\t    удаление файлов профиля и ключей пользователя;' \
+#                          '  \e[1;33museropt [username]\e[m\t- Редактирование дополнительных параметров' \
+#                          '  \t\t\t    подключения пользователя;' \
+#                          '  \e[1;33muserprof [username]\e[m\t- Редактирование фала профиля пользователя;' \
+#                          '  \e[1;33monline\e[m\t\t- Вывод информации о подключенных в данный момент пользователях;' \
+#                          '  \e[1;33mstart\e[m\t\t\t- Запуск OpenVPN сервера;' \
+#                          '  \e[1;33mstop\e[m\t\t\t- Остановка OpenVPN сервера;' \
+#                          '  \e[1;33mrestart\e[m\t\t- Перезапуск OpenVPN сервера;' \
+#                          '  \e[1;33mstatus\e[m\t\t- Проверка состояния OpenVPN сервера;' \
+#                          '  \e[1;33mconfig\e[m\t\t- Редактирование файла конфигурации OpenVPN сервера;' \
+#                          '  \e[1;33mlog\e[m\t\t\t- Просмотр лог-файла текщей сессии сервера.' \
+#                          '============================================================================================='
+#             ;;
 #         2) printf '%b\n' "Необходимо указать имя пользователя." ;;
-#         3) printf '%b\n' "Пользователь \e[1;33m${2}\e[m был ранее зарегистрирован для OpenVPN ${KEY_NAME}." \
-#                         "В данный момент пользователь \e[1;33m${2}\e[m имеет статус \e[1;35m${3}\e[m." ;;
-#         4) printf '%b\n' "Пользователь \e[1;33m${2}\e[m не зарегистрирован на сервере ${KEY_NAME}."
+#         3) printf '%b\n' "Пользователь \\e[1;33m${2}\\e[m был ранее зарегистрирован для OpenVPN ${KEY_NAME}." \
+#                         "В данный момент пользователь \\e[1;33m${2}\\e[m имеет статус \\e[1;35m${3}\\e[m." ;;
+#         4) printf '%b\n' "Пользователь \\e[1;33m${2}\\e[m не зарегистрирован на сервере ${KEY_NAME}."
 #     esac
 #     exit "$1"
 # }
@@ -494,16 +511,18 @@ make_manager
 #         active) USER_OPT_FILE="${VPN_DIR}/ccd/$user_name"
 #                 sudo "${MAIN_EDITOR}" "${USER_OPT_FILE}"
 #                 ;;
+#         not_registred) help_err '4' "$user_name" ;;
 #         *) help_err '3' "$user_name" "$status" ;;
 #     esac
 # }
-# user_config_edit () { # == Редактирование файла настроек удаленного пользователя
+# user_profile_edit () { # == Редактирование файла настроек удаленного пользователя
 #     user_name="$1"
 #     status="$(check_user "$user_name")"
 #     case "$status" in
 #         active) OVPN_FILE="${VPN_USERS_DIR}/$user_name/${user_name}_${KEY_NAME}.ovpn"
 #                 "${MAIN_EDITOR}" "${OVPN_FILE}"
 #                 ;;
+#         not_registred) help_err '4' "$user_name" ;;
 #         *) help_err '3' "$user_name" "$status" ;;
 #     esac
 # }
@@ -521,11 +540,11 @@ make_manager
 #     add) add_user "$2" ;;
 #     revok) revok_user "$2" ;;
 #     useropt) user_options_edit "$2" ;;
-#     userconf) user_config_edit "$2" ;;
+#     userprof) user_profile_edit "$2" ;;
 #     restart) restart_vpn ;;
 #     start) start_vpn ;;
 #     stop) stop_vpn ;;
-#     edit) vpn_config_edit ;;
+#     config) vpn_config_edit ;;
 #     log) show_vpn_log ;;
 #     online) show_online ;;
 #     status) show_vpn_status ;;
