@@ -365,6 +365,7 @@ make_manager
 #                          '  \t\t\t    подключения пользователя;' \
 #                          '  \e[1;33muserprof [username]\e[m\t- Редактирование файла профиля пользователя;' \
 #                          '  \e[1;33monline\e[m\t\t- Вывод информации о подключенных, в данный момент, пользователях;' \
+#                          '  \e[1;33musers\e[m\t\t\t- Вывод информации о зарегистрированных пользователях;' \
 #                          '  \e[1;33mstart\e[m\t\t\t- Запуск OpenVPN сервера;' \
 #                          '  \e[1;33mstop\e[m\t\t\t- Остановка OpenVPN сервера;' \
 #                          '  \e[1;33mrestart\e[m\t\t- Перезапуск OpenVPN сервера;' \
@@ -482,6 +483,7 @@ make_manager
 #             fi
 
 #             rm -r "${CLIENT_DIR}"
+#             sudo rm -f "${VPN_DIR}/ccd/$user_name"
 #             unset RT CRL user_name CLIENT_DIR
 #             ;;
 #     esac
@@ -545,8 +547,21 @@ make_manager
 #     sudo systemctl status openvpn@"${KEY_NAME}"
 # }
 # show_users () {
-#     printf '\n== %b =========== %b ==\n' '\e[33muser name\e[m' '\e[33maddress\e[m'
-#     sudo awk -F ',' '{printf "%s) %s\t\t%s\n", NR,  $1, $2}' "${VPN_DIR}"/ipp.txt
+#     printf '%s\n' ''
+#     for string in $( sudo awk -F ',' '{print $1}' "${VPN_DIR}"/ipp.txt ); do
+#         [[ "${#string}" -gt "${longest_string:-0}" ]] && longest_string="${#string}"
+#     done
+#
+#     width_first_field="$(( longest_string + 4 ))"
+#
+#     for string in $(sudo awk '{print $0}' "${VPN_DIR}"/ipp.txt); do
+#         (( line_num++ ))
+#         first_filed="$(printf '%s' "$string" | awk -F ',' '{print $1}' )"
+#         second_field="$(printf '%s' "$string" | awk -F ',' '{print $2}' )"
+#         first_filed_len=${#first_filed}
+#         blank_field="$(( width_first_field - first_filed_len ))"
+#         printf "${line_num}) %s%*s%s\\n" "$first_filed" "$blank_field" '' "$second_field"
+#     done
 #     printf '%s\n' ''
 # }
 # def_vars
