@@ -443,6 +443,7 @@ make_manager
 #             CLIENT_DIR="${VPN_USERS_DIR}/$user_name"
 #             rm -f "$RT"
 
+#             key_name="${KEY_NAME}"
 #             # set defaults
 #             export KEY_CN=""
 #             export KEY_OU=""
@@ -452,7 +453,7 @@ make_manager
 #             export KEY_ALTNAMES=""
 
 #             # revoke key and generate a new CRL
-#             $OPENSSL ca -revoke "$KEY_DIR/$user_name.crt" -config "$KEY_CONFIG"
+#             $OPENSSL ca -revoke "$KEY_DIR/${user_name}.crt" -config "$KEY_CONFIG"
 
 #             # generate a new CRL -- try to be compatible with
 #             # intermediate PKIs
@@ -464,12 +465,12 @@ make_manager
 #             fi
 
 #             # verify the revocation
-#             $OPENSSL verify -CAfile "$RT" -crl_check "$KEY_DIR/$user_name.crt"
+#             $OPENSSL verify -CAfile "$RT" -crl_check "$KEY_DIR/${user_name}.crt"
 
 #             if [[ ! -e  "${VPN_DIR}/clr.pem" ]]; then
 #                 sudo ln "$CRL" "${VPN_DIR}"
 #                 sudo chgrp nogroup "$CRL"
-#                 printf '%s\n' "crl-verify ${VPN_DIR}/crl.pem" | sudo tee -a "${VPN_DIR}/${KEY_NAME}.conf"
+#                 printf '%s\n' "crl-verify ${VPN_DIR}/crl.pem" | sudo tee -a "${VPN_DIR}/${key_name}.conf"
 #             fi
 
 #             rm -r "${CLIENT_DIR}"
@@ -488,7 +489,7 @@ make_manager
 #     sudo systemctl stop openvpn@"${KEY_NAME}"
 # }
 # vpn_config_edit () { # == Редактирование файла конфигурации OpenVPN сервера +
-#     check="$(sha256sum "${VPN_DIR}/${KEY_NAME}.conf")"
+#     check="$(sha256sum "${VPN_DIR}/${KEY_NAME}.conf" | awk '{print $1}')"
 #     sudo "${MAIN_EDITOR}" "${VPN_DIR}/${KEY_NAME}.conf"
 #     if [[ "$check" != "$(sha256sum "${VPN_DIR}/${KEY_NAME}.conf" | awk '{print $1}')" ]]; then
 #             read -r -i 'y' -e -p 'Перезапустить OpenVPN сервер?: ' -n 1 REPLAY
