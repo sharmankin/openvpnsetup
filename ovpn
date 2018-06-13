@@ -298,6 +298,7 @@ make_manager () {
     sudo rm -f /usr/local/bin/vpn 2>/dev/null
     printf '%b\n' \
         '#!/bin/bash' \
+        "native_lang=\$LANG" \
         'def_vars () {' \
         '           VPN_DIR="/etc/openvpn"' \
         '           VPN_LOG_DIR="/var/log/openvpn"' \
@@ -543,6 +544,11 @@ make_manager
 # show_vpn_status () { # == Вывод статуса OpenVPN сервера
 #     sudo systemctl status openvpn@"${KEY_NAME}"
 # }
+# show_users () {
+#     printf '\n== %b =========== %b ==\n' '\e[33muser name\e[m' '\e[33maddress\e[m'
+#     sudo awk -F ',' '{printf "%s) %s\t\t%s\n", NR,  $1, $2}' "${VPN_DIR}"/ipp.txt
+#     printf '%s\n' ''
+# }
 # def_vars
 # case "$1" in
 #     add) add_user "$2" ;;
@@ -555,6 +561,7 @@ make_manager
 #     config) vpn_config_edit ;;
 #     log) show_vpn_log ;;
 #     online) show_online ;;
+#     users) show_users ;;
 #     status) show_vpn_status ;;
 #     *) help_err '1';;
 # esac
