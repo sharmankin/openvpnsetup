@@ -348,7 +348,7 @@ make_manager
 #     condition="$(grep -w "CN=$u_name" "${KEY_DIR}"/index.txt | awk '{print $1}')"
 #     case "$condition" in
 #         V) printf '%s' 'active' ;;
-#         R) printf '%s' 'revoked' ;;
+#         R) printf '%s' 'blocked' ;;
 #         *) printf '%s' 'not_registred' ;;
 #     esac
 #     unset u_name condition
@@ -359,7 +359,7 @@ make_manager
 #                          '=============================================================================================' \
 #                          '  \e[1;33madd [username]\e[m \t- Добавление пользователя, ' \
 #                          '  \t\t\t    создание фалов профиля и ключей пользователя;' \
-#                          '  \e[1;33mrevok [username]\e[m\t- Блокировка ключей пользователя, ' \
+#                          '  \e[1;33mblock [username]\e[m\t- Блокировка ключей пользователя, ' \
 #                          '  \t\t\t    удаление файлов профиля и ключей пользователя;' \
 #                          '  \e[1;33museropt [username]\e[m\t- Редактирование дополнительных параметров' \
 #                          '  \t\t\t    подключения пользователя;' \
@@ -447,7 +447,7 @@ make_manager
 #     status="$(check_user "$user_name")"
 #     case "$status" in
 #         not_registred) help_err 4 "$user_name" ;;
-#         revoked) help_err 3 "$user_name" "$status" ;;
+#         blocked) help_err 3 "$user_name" "$status" ;;
 #         *)
 #             CLIENT_DIR="${VPN_USERS_DIR}/$user_name"
 #             rm -f "$RT"
@@ -551,23 +551,28 @@ make_manager
 #     for string in $( sudo awk -F ',' '{print $1}' "${VPN_DIR}"/ipp.txt ); do
 #         [[ "${#string}" -gt "${longest_string:-0}" ]] && longest_string="${#string}"
 #     done
-#
 #     width_first_field="$(( longest_string + 4 ))"
-#
-#     for string in $(sudo awk '{print $0}' "${VPN_DIR}"/ipp.txt); do
+#     for string in $(sudo cat "${VPN_DIR}"/ipp.txt); do
 #         (( line_num++ ))
 #         first_filed="$(printf '%s' "$string" | awk -F ',' '{print $1}' )"
+#         condition="$(check_user "$first_filed")"
+#         case "$condition" in
+#             blocked) status="\\e[31$condition\\e[m" ;;
+#             active) status='\e[33moffline\e[m'
+#                     sudo grep -wq "$first_filed" "${VPN_LOG_DIR}"/openvpn-status.log && status='\e[32monline\e[m'
+#                     ;;
+#         esac
 #         second_field="$(printf '%s' "$string" | awk -F ',' '{print $2}' )"
 #         first_filed_len=${#first_filed}
 #         blank_field="$(( width_first_field - first_filed_len ))"
-#         printf "${line_num}) %s%*s%s\\n" "$first_filed" "$blank_field" '' "$second_field"
+#         printf "${line_num}) %s%*s%s %b\\n" "$first_filed" "$blank_field" '' "$second_field" "$status"
 #     done
 #     printf '%s\n' ''
 # }
 # def_vars
 # case "$1" in
 #     add) add_user "$2" ;;
-#     revok) revok_user "$2" ;;
+#     block) revok_user "$2" ;;
 #     useropt) user_options_edit "$2" ;;
 #     userprof) user_profile_edit "$2" ;;
 #     restart) restart_vpn ;;
