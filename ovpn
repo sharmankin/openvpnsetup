@@ -484,11 +484,12 @@ make_manager
 #             # verify the revocation
 #             $OPENSSL verify -CAfile "$RT" -crl_check "$KEY_DIR/${user_name}.crt"
 
-#             if [[ ! -e  "${VPN_DIR}/clr.pem" ]]; then
+#             KEY_NAME="${key_name}"
+#             if [[ ! -e  "${VPN_DIR}/crl.pem" ]]; then
 #                 sudo ln "$CRL" "${VPN_DIR}"
 #                 chgrp nogroup "$CRL"
 #                 chmod 640 "$CRL"
-#                 printf '%s\n' "crl-verify ${VPN_DIR}/crl.pem" | sudo tee -a "${VPN_DIR}/${key_name}.conf"
+#                 printf '%s\n' "crl-verify ${VPN_DIR}/crl.pem" | sudo tee -a "${VPN_DIR}/${KEY_NAME}.conf"
 #                 restart_vpn
 #             fi
 
