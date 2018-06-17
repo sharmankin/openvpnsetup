@@ -1,4 +1,18 @@
 #!/bin/bash
+help_err () {
+    exit_param=0
+    case "$1" in
+        1) exit_param="$1"
+            ;;
+        no_exp_ip) printf '%s\n' 'Не удалось определить внешний IP адрес.'
+            exit_param="2"
+            ;;
+        no_interface) printf '%s\n' 'Не удалось определить интерфейс для выхода в интернет.'
+            exit_param=3
+            ;;
+    esac
+    exit "$exit_param"
+}
 get_vars () {
            VPN_DIR='/etc/openvpn'
            VPN_KEYS="${VPN_DIR}/keys"
@@ -30,7 +44,7 @@ get_vars () {
     export KEY_NAME="${HOSTNAME// /}"
             MAIN_EDITOR=$(update-alternatives --get-selections | awk '$1 == "editor" {print $3}')
     export PATH="$EASY_RSA:$PATH"
-            EXT_IP="$(curl --silent https://ipinfo.io/ip)"
+            EXT_IP="$(curl --silent https://ipinfo.io/ip)" || help_err 'no_ip'
             EXT_INTERFACE="$(ext_interface)"
             VPN_PORT="$(gen_port)"
             NETWORK="$(gen_network)"
@@ -575,7 +589,7 @@ make_manager
 #             second_field="$(printf '%s' "$string" | awk -F ',' '{print $2}' )"
 #             first_filed_len=${#first_filed}
 #             blank_field="$(( width_first_field - first_filed_len ))"
-#             printf "%4s %s%*s%s\\t\\t%b\\n" "${line_num})" "$first_filed" "$blank_field" '' "$second_field" "${status}"
+#             printf "%4s %s%*s%s\\t%b\\n" "${line_num})" "$first_filed" "$blank_field" '' "$second_field" "${status}"
 #         fi
 #     done
 #     printf '%s\n' ''
