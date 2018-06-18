@@ -121,7 +121,7 @@ until [[ ${lets_go:-0} -eq 1 ]]; do
     read -r -i 'y' -e -p 'Chenge a values of variables ?: ' -n 1 REPLAY
     case ${REPLAY::1} in
         y|Y) until [[ ${#key_country} -eq 2 ]]; do
-                 printf '%b%*s' '\e[10;1H' "$(tput cols)" ' ' '\e[10;1H'
+                 printf '%b%*s%b' '\e[10;1H' "$(tput cols)" ' ' '\e[10;1H'
                  read -r -i "$KEY_COUNTRY" -e -p '[    KEY_COUNTRY=' key_country
              done
              KEY_COUNTRY="${key_country^^}"
@@ -129,61 +129,61 @@ until [[ ${lets_go:-0} -eq 1 ]]; do
              printf '%b' '\e[2;1H' "[    KEY_COUNTRY=\"$KEY_COUNTRY\""
 
              until [[ ${#key_province} -ge 2 ]]; do
-                 printf '%b%*s' '\e[10;1H' "$(tput cols)" ' ' '\e[10;1H'
+                 printf '%b%*s%b' '\e[10;1H' "$(tput cols)" ' ' '\e[10;1H'
                  read -r -i "$KEY_PROVINCE" -e -p '[    KEY_PROVINCE=' key_province
              done
              KEY_PROVINCE="${key_province^}"
              unset key_province
-             printf '%b%*s' '\e[3;1H' "$(tput cols)" ' ' '\e[3;1H'
+             printf '%b%*s%b' '\e[3;1H' "$(tput cols)" ' ' '\e[3;1H'
              printf '%b' "[    KEY_PROVINCE=\"$KEY_PROVINCE\""
 
              until [[ ${#key_city} -ge 2 ]]; do
-                 printf '%b%*s' '\e[10;1H' "$(tput cols)" ' ' '\e[10;1H'
+                 printf '%b%*s%b' '\e[10;1H' "$(tput cols)" ' ' '\e[10;1H'
                  read -r -i "$KEY_CITY" -e -p '[    KEY_CITY=' key_city
              done
              KEY_CITY="${key_city^}"
              unset key_city
-             printf '%b%*s' '\e[4;1H' "$(tput cols)" ' ' '\e[4;1H'
+             printf '%b%*s%b' '\e[4;1H' "$(tput cols)" ' ' '\e[4;1H'
              printf '%b' "[    KEY_CITY=\"$KEY_CITY\""
 
              until [[ ${#key_org} -ge 2 ]]; do
-                 printf '%b%*s' '\e[10;1H' "$(tput cols)" ' ' '\e[10;1H'
+                 printf '%b%*s%b' '\e[10;1H' "$(tput cols)" ' ' '\e[10;1H'
                  read -r -i "$KEY_ORG" -e -p '[    KEY_ORG=' key_org
              done
 
              KEY_ORG="${key_org}"
              unset key_org
-             printf '%b%*s' '\e[5;1H' "$(tput cols)" ' ' '\e[5;1H'
+             printf '%b%*s%b' '\e[5;1H' "$(tput cols)" ' ' '\e[5;1H'
              printf '%b' "[    KEY_ORG=\"$KEY_ORG\""
 
              until [[ ${#key_email} -ge 6 ]]; do
-                 printf '%b%*s' '\e[10;1H' "$(tput cols)" ' ' '\e[10;1H'
+                 printf '%b%*s%b' '\e[10;1H' "$(tput cols)" ' ' '\e[10;1H'
                  read -r -i "$KEY_EMAIL" -e -p '[    KEY_EMAIL=' key_email
              done
              KEY_EMAIL="${key_email,,}"
              unset key_email
-             printf '%b%*s' '\e[6;1H' "$(tput cols)" ' ' '\e[6;1H'
+             printf '%b%*s%b' '\e[6;1H' "$(tput cols)" ' ' '\e[6;1H'
              printf '%b' "[    KEY_EMAIL=\"$KEY_EMAIL\""
 
              until [[ ${#key_ou} -ge 6 ]]; do
-                 printf '%b%*s' '\e[10;1H' "$(tput cols)" ' ' '\e[10;1H'
+                 printf '%b%*s%b' '\e[10;1H' "$(tput cols)" ' ' '\e[10;1H'
                  read -r -i "$KEY_OU" -e -p '[    KEY_OU=' key_ou
              done
              KEY_OU="${key_ou}"
              unset key_ou
-             printf '%b%*s' '\e[7;1H' "$(tput cols)" ' ' '\e[7;1H'
+             printf '%b%*s%b' '\e[7;1H' "$(tput cols)" ' ' '\e[7;1H'
              printf '%b' "[    KEY_OU=\"$KEY_OU\""
 
              until [[ ${#key_name} -ge 6 ]]; do
-                 printf '%b%*s' '\e[10;1H' "$(tput cols)" ' ' '\e[10;1H'
+                 printf '%b%*s%b' '\e[10;1H' "$(tput cols)" ' ' '\e[10;1H'
                  read -r -i "$KEY_NAME" -e -p '[    KEY_NAME=' key_name
              done
              KEY_NAME="${key_name}"
              unset key_name
-             printf '%b%*s' '\e[8;1H' "$(tput cols)" ' ' '\e[8;1H'
+             printf '%b%*s%b' '\e[8;1H' "$(tput cols)" ' ' '\e[8;1H'
              printf '%b' "[    KEY_NAME=\"$KEY_NAME\""
 
-             printf '%b%*s' '\e[10;1H' "$(tput cols)" ' ' '\e[10;1H'
+             printf '%b%*s%b' '\e[10;1H' "$(tput cols)" ' ' '\e[10;1H'
              read -r -i 'y' -e -p '[    Save current values and continue? ' REPLAY
              case ${REPLAY::1} in
                 y|Y) lets_go=1 ;;
