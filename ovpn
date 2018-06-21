@@ -4,7 +4,7 @@ help_err () {
     case "$1" in
         1) exit_param="$1"
             ;;
-        no_exp_ip) printf '%s\n' 'Не удалось определить внешний IP адрес.'
+        no_ext_ip) printf '%s\n' 'Не удалось определить внешний IP адрес.'
             exit_param="2"
             ;;
         no_interface) printf '%s\n' 'Не удалось определить интерфейс для выхода в интернет.'
@@ -44,7 +44,7 @@ get_vars () {
     export KEY_NAME="${HOSTNAME// /}"
             MAIN_EDITOR=$(update-alternatives --get-selections | awk '$1 == "editor" {print $3}')
     export PATH="$EASY_RSA:$PATH"
-            EXT_IP="$(curl --silent https://ipinfo.io/ip)" || help_err 'no_ip'
+            EXT_IP="$(curl --silent https://ipinfo.io/ip)" || help_err 'no_ext_ip'
             EXT_INTERFACE="$(ext_interface)"
             VPN_PORT="$(gen_port)"
             NETWORK="$(gen_network)"
@@ -265,7 +265,12 @@ make_config () { # == Создание файла конфигурации се�
         sudo chmod 660 "${VPN_DIR}/ipp.txt"
 }
 gen_server_keys () {
-    pkitool --initca
+    clear
+    read -r -i 'y' -e -p 'Установить пароль для управления ключами?: ' REPLAY
+    if [[ "${REPLAY::1}" == 'y' ]] || [[ "${REPLAY::1}" == 'Y' ]]; then
+      initwithpass='--pass'
+    fi
+    pkitool --initca ${initwithpass}
     pkitool --server "${KEY_NAME}"
     openssl dhparam -out "${KEY_DIR}/dh${KEY_SIZE}.pem" "${KEY_SIZE}"
     openvpn --genkey --secret "${KEY_DIR}"/ta.key
