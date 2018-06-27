@@ -7,8 +7,8 @@ help_err () {
         no_ext_ip) printf '%s\n' 'Не удалось определить внешний IP адрес.'
             exit_param='2'
             ;;
-        no_interface) printf '%s\n'   'Не удалось определить интерфейс для выхода в интернет.' \
-                                      'Убедитесь что компьютер имеет выход в Интернет'
+        no_interface) printf '%s\n' 'Не удалось определить интерфейс для выхода в Интернет.' \
+                                    'Убедитесь что компьютер имеет выход в Интернет'
             exit_param='3'
             ;;
     esac
@@ -210,62 +210,62 @@ gen_port () {
   done
 }
 make_config () { # == Создание файла конфигурации сервера
-  find "${VPN_DIR}" -type f ! -regex ".*update-resolv-conf$" -exec rm -f {} \; 2>/dev/null
-  sudo rm -rf "$VPN_LOG_DIR" 2>/dev/null
-  sudo systemctl stop openvpn > /dev/null 2>&1 && sudo systemctl disable openvpn > /dev/null 2>&1
+    find "${VPN_DIR}" -type f ! -regex ".*update-resolv-conf$" -exec rm -f {} \; 2>/dev/null
+    sudo rm -rf "$VPN_LOG_DIR" 2>/dev/null
+    sudo systemctl stop openvpn > /dev/null 2>&1 && sudo systemctl disable openvpn > /dev/null 2>&1
 
-  xenial='16.04'
-  if [[ "$(lsb_release -rs)" > "$xenial" ]]; then
-      explicit_exit_notify='explicit-exit-notify 1'
-      ncp_ciphers='ncp-ciphers AES-256-CBC'
-  fi
+    xenial='16.04'
+    if [[ "$(lsb_release -rs)" > "$xenial" ]]; then
+        explicit_exit_notify='explicit-exit-notify 1'
+        ncp_ciphers='ncp-ciphers AES-256-CBC'
+    fi
 
-  printf '%b\n' 'mode server' \
-      'proto udp' \
-      'dev tun' \
-      'mtu-test' \
-      "port ${VPN_PORT}" \
-      'sndbuf 0' \
-      'rcvbuf 0' \
-      'mssfix 0' \
-      'topology subnet' \
-      "$explicit_exit_notify" \
-      'tls-server' \
-      "ca ${VPN_KEYS}/ca.crt" \
-      "cert ${VPN_KEYS}/${KEY_NAME}.crt" \
-      "key ${VPN_KEYS}/${KEY_NAME}.key" \
-      "dh ${VPN_KEYS}/dh${KEY_SIZE}.pem" \
-      "server ${NETWORK} 255.255.255.0" \
-      "ifconfig-pool-persist ${VPN_DIR}/ipp.txt" \
-      "client-config-dir ${VPN_DIR}/ccd" \
-      'push "redirect-gateway def1 bypass-dhcp"' \
-      'push "dhcp-option DNS 208.67.222.222"' \
-      'push "dhcp-option DNS 208.67.220.220"' \
-      'client-to-client' \
-      'keepalive 5 20' \
-      'key-direction 0' \
-      "tls-auth ${VPN_KEYS}/ta.key" \
-      'cipher AES-256-CBC' \
-      'auth SHA384' \
-      "$ncp_ciphers" \
-      'user nobody' \
-      'group nogroup' \
-      'persist-key' \
-      'persist-tun' \
-      "status      ${VPN_LOG_DIR}/openvpn-status.log" \
-      "log         ${VPN_LOG_DIR}/openvpn_current_session.log" \
-      "# log-append   ${VPN_LOG_DIR}/openvpn.log" \
-      'verb 3' \
-      'mute-replay-warnings' \
-      'mute 20' | \
-      sudo tee "${VPN_DIR}/${KEY_NAME}.conf" > /dev/null 2>&1
+    printf '%b\n'   'mode server' \
+                    'proto udp' \
+                    'dev tun' \
+                    'mtu-test' \
+                    "port ${VPN_PORT}" \
+                    'sndbuf 0' \
+                    'rcvbuf 0' \
+                    'mssfix 0' \
+                    'topology subnet' \
+                    "$explicit_exit_notify" \
+                    'tls-server' \
+                    "ca ${VPN_KEYS}/ca.crt" \
+                    "cert ${VPN_KEYS}/${KEY_NAME}.crt" \
+                    "key ${VPN_KEYS}/${KEY_NAME}.key" \
+                    "dh ${VPN_KEYS}/dh${KEY_SIZE}.pem" \
+                    "server ${NETWORK} 255.255.255.0" \
+                    "ifconfig-pool-persist ${VPN_DIR}/ipp.txt" \
+                    "client-config-dir ${VPN_DIR}/ccd" \
+                    'push "redirect-gateway def1 bypass-dhcp"' \
+                    'push "dhcp-option DNS 208.67.222.222"' \
+                    'push "dhcp-option DNS 208.67.220.220"' \
+                    'client-to-client' \
+                    'keepalive 5 20' \
+                    'key-direction 0' \
+                    "tls-auth ${VPN_KEYS}/ta.key" \
+                    'cipher AES-256-CBC' \
+                    'auth SHA384' \
+                    "$ncp_ciphers" \
+                    'user nobody' \
+                    'group nogroup' \
+                    'persist-key' \
+                    'persist-tun' \
+                    "status      ${VPN_LOG_DIR}/openvpn-status.log" \
+                    "log         ${VPN_LOG_DIR}/openvpn_current_session.log" \
+                    "# log-append   ${VPN_LOG_DIR}/openvpn.log" \
+                    'verb 3' \
+                    'mute-replay-warnings' \
+                    'mute 20' | \
+    sudo tee "${VPN_DIR}/${KEY_NAME}.conf" > /dev/null 2>&1
 
-  sudo mkdir -p "${VPN_LOG_DIR}"
-  sudo mkdir -p "${VPN_DIR}/ccd"
+    sudo mkdir -p "${VPN_LOG_DIR}"
+    sudo mkdir -p "${VPN_DIR}/ccd"
 
-  : | sudo tee "${VPN_DIR}/ipp.txt"
-  sudo chgrp nogroup "${VPN_DIR}/ipp.txt"
-  sudo chmod 660 "${VPN_DIR}/ipp.txt"
+    : | sudo tee "${VPN_DIR}/ipp.txt"
+    sudo chgrp nogroup "${VPN_DIR}/ipp.txt"
+    sudo chmod 660 "${VPN_DIR}/ipp.txt"
 }
 gen_server_keys () {
     clear
@@ -283,43 +283,48 @@ gen_server_keys () {
 }
 configure_routes () {
     if sudo uwf status 2>/dev/null | grep -qw active; then
-        sudo sed '/^$/,$d' /etc/ufw/before.rules | tee add_rules_file > /dev/null
-        ufw_rule="$( printf '%s' '# START OPENVPN RULES\n' \
-                      '# NAT table rules\n' \
-                      '*nat\n' \
-                      ':POSTROUTING ACCEPT [0:0]\n' \
-                      "# Allow traffic from OpenVPN client to ${EXT_INTERFACE}\\n" \
-                      "-A POSTROUTING -s ${NETWORK}/24 -o ${EXT_INTERFACE} -j MASQUERADE\\n" \
-                      'COMMIT\n' \
-                      '# END OPENVPN RULES\n')"
-        sudo sed -i "0,/^$/{/^$/a$ufw_rule
-                }"
+        ufw_rule="$( printf '%s' \
+            '# START OPENVPN RULES\n' \
+            '# NAT table rules\n' \
+            '*nat\n' \
+            ':POSTROUTING ACCEPT [0:0]\n' \
+            "# Allow traffic from OpenVPN client to ${EXT_INTERFACE}\\n" \
+            "-A POSTROUTING -s ${NETWORK}/24 -o ${EXT_INTERFACE} -j MASQUERADE\\n" \
+            'COMMIT\n' \
+            '# END OPENVPN RULES\n')"
+        sudo sed -i "0,/^$/{
+                /^$/a$ufw_rule
+            }" "/etc/ufw/before.rules"
 
         sudo ufw allow "${VPN_PORT}"/udp > /dev/null
         sudo sed -i '/DEFAULT_FORWARD_POLICY/s/".*"/"ACCEPT"/' /etc/default/ufw
-        printf '%s\n' 'net/ipv4/ip_forward=1' 'net/ipv4/icmp_echo_ignore_all=1' | sudo tee -a /etc/ufw/sysctl.conf
+        printf '%s\n' 'net/ipv4/ip_forward=1' 'net/ipv4/icmp_echo_ignore_all=1' | \
+            sudo tee -a /etc/ufw/sysctl.conf
         sudo systemctl restart ufw
     else
-        printf '%b\n' '[Unit]' \
-                'Description=Up nat rule for OpenVPN' \
-                'After=network.target' \
-                '' \
-                '[Service]' \
-                'Type=forking' \
-                'User=root' \
-                "ExecStart=/sbin/iptables -t nat -A POSTROUTING -s ${NETWORK}/24 -o ${EXT_INTERFACE} -j MASQUERADE" \
-                '' \
-                '[Install]' \
-                'WantedBy=multi-user.target' | \
-        sudo tee /etc/systemd/system/ovpnroute.service >/dev/null
-        printf '%s\n' 'net.ipv4.ip_forward=1' 'net.ipv4.icmp_echo_ignore_all=1' | sudo tee -a /etc/sysctl.conf > /dev/null
+        printf '%b\n' \
+            '[Unit]' \
+            'Description=Up nat rule for OpenVPN' \
+            'After=network.target' \
+            '' \
+            '[Service]' \
+            'Type=forking' \
+            'User=root' \
+            "ExecStart=/sbin/iptables -t nat -A POSTROUTING -s ${NETWORK}/24 -o ${EXT_INTERFACE} -j MASQUERADE" \
+            '' \
+            '[Install]' \
+            'WantedBy=multi-user.target' | \
+            sudo tee /etc/systemd/system/ovpnroute.service >/dev/null
+        printf '%s\n' 'net.ipv4.ip_forward=1' 'net.ipv4.icmp_echo_ignore_all=1' | \
+            sudo tee -a /etc/sysctl.conf > /dev/null
         sudo sysctl -p > /dev/null
+        sudo systemctl daemon-reload >/dev/null 2>&1
+        sudo systemctl enable ovpnroute >/dev/null 2>&1
+        sudo systemctl start ovpnroute >/dev/null 2>&1
     fi
     sudo systemctl stop openvpn >/dev/null 2>&1
     sudo systemctl disable openvpn >/dev/null 2>&1
-    sudo systemctl daemon-reload >/dev/null
-    sudo systemctl enable ovpnroute >/dev/null 2>&1
-    sudo systemctl start ovpnroute >/dev/null
+
     sudo systemctl enable openvpn@"${KEY_NAME}" >/dev/null 2>&1
     sudo systemctl start openvpn@"${KEY_NAME}" >/dev/null 2>&1
 }
@@ -357,9 +362,11 @@ make_manager () {
         "           VPN_USERS_DIR=\"${VPN_USERS_DIR}\"" \
         '}' | sudo tee /usr/local/bin/vpn > /dev/null
 
-    sed -rn '/^#.*TO_MANAGER/,/^#.*TO_MANAGER_END/p' "$0" | sed -r '/TO_MANAGER|TO_MANAGER_END/d' | \
-        sed -r 's/^# //' | sudo tee -a /usr/local/bin/vpn > /dev/null
-        sudo chmod +x /usr/local/bin/vpn
+    sed -rn '/^#.*TO_MANAGER/,/^#.*TO_MANAGER_END/p' "$0" | \
+        sed -r '/TO_MANAGER|TO_MANAGER_END/d' | \
+        sed -r 's/^# //' | \
+        sudo tee -a /usr/local/bin/vpn > /dev/null
+    sudo chmod +x /usr/local/bin/vpn
 }
 
 get_vars
@@ -618,6 +625,6 @@ make_manager
 #     status) show_vpn_status ;;
 #     *) help_err '1';;
 # esac
-#
+
 # exit 0
 # # ============ TO_MANAGER_END =====
