@@ -14,6 +14,37 @@ help_err () {
     esac
     exit "$exit_param"
 }
+cmd_progress () {
+    description="$1"
+    len=30
+    while read -r; do
+        [[ ${count:-0} -eq 0 ]] && direction='forward'
+        [[ ${count:-0} -eq $len ]] && direction='backward'
+
+        if [[ "$direction" == 'forward' ]]; then
+            (( count++ ))
+        else
+            (( count-- ))
+        fi
+
+        printf '\r%*s\r%b' "$(tput cols)" '' "[ \\e[1;33m${description}\\e[m ] "
+        printf '%*s' "$count" '' | tr ' ' '='
+        printf '%b' '\e[1;33m\u2317\e[m'
+        printf '%*s' "$(( len - count ))"  '' | tr ' ' '='
+        printf '%b' ' [ \e[1;33min progress...\e[m ]'
+    done
+    printf '\r%*s\r%b\n' "$(tput cols)" '' "[ \\e[1;32m${description} Done\\e[m ]"
+}
+check_install () {
+    [[ -z "$*" ]] && return 1
+    local packages
+    for item in "$@"; do
+        dpkg -s "$item" 2>/dev/null | grep -q 'Status.*installed' || packages+=( "$item" )
+    done
+    [[ -n "${packages[*]}" ]] && \
+        sudo apt-get update 2>&1 | cmd_progress 'Repository Update' && \
+            sudo apt-get -y install "${packages[@]}" 2>&1 | cmd_progress 'Package Install'
+}
 get_vars () {
            VPN_DIR='/etc/openvpn'
            VPN_KEYS="${VPN_DIR}/keys"
@@ -50,15 +81,6 @@ get_vars () {
             VPN_PORT="$(gen_port)"
             NETWORK="$(gen_network)"
             VPN_USERS_DIR="${HOME}/vpn_users"
-}
-get_packages () {
-    dpkg-query -s openvpn 2>/dev/null | grep -qE "^Status.*installed$" || packages+=( "openvpn" )
-    dpkg-query -s easy-rsa 2>/dev/null | grep -qE "^Status.*installed$" || packages+=( "easy-rsa" )
-    dpkg-query -s lnav 2>/dev/null | grep -qE "^Status.*installed$" || packages+=( "lnav" )
-    dpkg-query -s zip 2>/dev/null | grep -qE "^Status.*installed$" || packages+=( "zip" )
-    dpkg-query -s curl 2>/dev/null | grep -qE "^Status.*installed$" || packages+=( "curl" )
-    dpkg-query -s net-tools 2>/dev/null | grep -qE "^Status.*installed$" || packages+=( "net-tools" )
-    [[ -z "${packages[*]}" ]] || sudo apt-get -y install "${packages[@]}" > /dev/null 2>&1
 }
 make_ca () {
     sudo rm -rf "${EASY_RSA}" 2>/dev/null
@@ -302,7 +324,7 @@ configure_routes () {
         sudo systemctl restart ufw
     else
         sudo mkdir /etc/systemd/system/openvpn@"${KEY_NAME}".service.d
-        printf '%b\n' \
+        printf '%s\n' \
         "ExecStartPost=/sbin/iptables -t nat -A POSTROUTING -s ${NETWORK}/24 -o ${EXT_INTERFACE} -j MASQUERADE" \
         "ExecStopPost=/sbin/iptables -t nat -D POSTROUTING -s ${NETWORK}/24 -o ${EXT_INTERFACE} -j MASQUERADE" | \
             sudo tee /etc/systemd/system/openvpn@"${KEY_NAME}".service.d/openvpn_masquerade.conf >/dev/null
@@ -361,7 +383,7 @@ make_manager () {
 
 get_vars
 set_vars
-get_packages
+check_install openvpn easy-rsa lnav zip curl net-tools
 make_ca
 gen_server_keys
 make_config
