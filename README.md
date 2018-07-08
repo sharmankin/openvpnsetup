@@ -16,6 +16,6 @@ and see the list of users shown below
 
 and some other management commands OpenVPN server will be much easier
 
-*I will be grateful for constructive criticism*
+> *I will be grateful for constructive criticism*
 
-*Буду благодарен за конструктивную критику*
+> *Буду благодарен за конструктивную критику*
