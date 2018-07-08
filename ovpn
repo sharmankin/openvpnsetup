@@ -325,6 +325,7 @@ configure_routes () {
     else
         sudo mkdir /etc/systemd/system/openvpn@"${KEY_NAME}".service.d
         printf '%s\n' \
+        '[Service]' \
         "ExecStartPost=/sbin/iptables -t nat -A POSTROUTING -s ${NETWORK}/24 -o ${EXT_INTERFACE} -j MASQUERADE" \
         "ExecStopPost=/sbin/iptables -t nat -D POSTROUTING -s ${NETWORK}/24 -o ${EXT_INTERFACE} -j MASQUERADE" | \
             sudo tee /etc/systemd/system/openvpn@"${KEY_NAME}".service.d/openvpn_masquerade.conf >/dev/null
