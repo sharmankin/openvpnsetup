@@ -326,7 +326,7 @@ configure_routes () {
     fi
 
     if grep -q 'net.ipv4.icmp_echo_ignore_all' /etc/sysctl.conf; then
-        sudo sed -ri '/net.ipv4.ip_forward=/{ s/^#//; s/0/1/}' /etc/sysctl.conf
+        sudo sed -ri '/net.ipv4.icmp_echo_ignore_all=/{ s/^#//; s/0/1/}' /etc/sysctl.conf
     else
         printf '%s\n' 'net.ipv4.icmp_echo_ignore_all=1' | sudo tee -a /etc/sysctl.conf > /dev/null
     fi
