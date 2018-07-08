@@ -306,7 +306,7 @@ gen_server_keys () {
 }
 configure_routes () {
     sudo sed -i '/DEFAULT_FORWARD_POLICY/s/".*"/"ACCEPT"/' /etc/default/ufw
-    if [[ "$(sudo ufw status | awk 'NR == 1 {print $2}')" == 'active' ]]; then
+    if [[ "$(sudo LANGUAGE=en_US.UTF-8 ufw status | awk 'NR == 1 {print $2}')" == 'active' ]]; then
         sudo systemctl restart ufw
     fi
 
