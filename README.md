@@ -13,3 +13,9 @@ insted `sudo cat /var/log/openvpn/openvpn-status.log ` you can type `vpn users`,
 and see the list of users shown below
 
 ![vpn users](img/screenshot1.png)
+
+and some other management commands OpenVPN server will be much easier
+
+*I will be grateful for constructive criticism*
+
+*Буду благодарен за конструктивную критику*
