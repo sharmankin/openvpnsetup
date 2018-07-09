@@ -10,7 +10,7 @@ instead `sudo systemctl restrt openvpn@<name_of_your_config>` you can type `vpn 
 insted `sudo vi /etc/openvpn/<name_of_your_config>.conf` you can type `vpn config`
 
 insted `sudo cat /var/log/openvpn/openvpn-status.log ` you can type `vpn users`,
-and see the list of users shown below
+and will see the list of users same as shown below
 
 ![vpn users](img/screenshot1.png)
 
