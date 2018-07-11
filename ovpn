@@ -220,7 +220,7 @@ set_vars () {
 }
 gen_port () {
   mapfile -t list_used_ports <<< \
-      "$(netstat -atn | awk 'NR > 3 {print $4}' | awk -F ':' '!seen[$NF]++ {print $NF}')"
+      "$(netstat -atn | awk 'NR > 2 {print $4}' | awk -F ':' '!seen[$NF]++ {print $NF}')"
 
   list_used_ports+=( 8080 2121 8888 2222 2323 5353 10000 )
   while [[ "${get_new_port:-1}" -ne 0 ]]; do
@@ -472,17 +472,17 @@ make_manager
 #         'mute 20' \
 #         '' \
 #         '<ca>' \
-#         "$(cat "${KEY_DIR}"/ca.crt)" \
+#         "$(< "${KEY_DIR}"/ca.crt)" \
 #         '</ca>' \
 #         '<cert>' \
-#         "$(cat "${KEY_DIR}/$user_name".crt)" \
+#         "$(< "${KEY_DIR}/$user_name".crt)" \
 #         '</cert>' \
 #         '<key>' \
-#         "$(cat "${KEY_DIR}/$user_name".key)" \
+#         "$(< "${KEY_DIR}/$user_name".key)" \
 #         '</key>' \
 #         'key-direction 1' \
 #         '<tls-auth>' \
-#         "$(cat "$KEY_DIR"/ta.key)" \
+#         "$(< "$KEY_DIR"/ta.key)" \
 #         '</tls-auth>' > "${OVPN_FILE}"
 #     unset OVPN_FILE CIPHER AUTH user_name status CLIENT_DIR
 # }
